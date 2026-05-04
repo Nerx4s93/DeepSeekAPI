@@ -16,6 +16,7 @@ public class DeepSeekClient
     private readonly string _authToken;
     private readonly DeepSeekPOW _deepSeekPow;
     private readonly HttpClient _httpClient;
+    private readonly DeepSeekChunkParser _chunkParser;
 
     public DeepSeekClient(string authToken)
     {
@@ -27,6 +28,7 @@ public class DeepSeekClient
         _authToken = authToken;
         _deepSeekPow = new DeepSeekPOW("wasm\\sha3_wasm_bg.7b9ca65ddd.wasm");
         _httpClient = new HttpClient();
+        _chunkParser = new DeepSeekChunkParser();
     }
 
     public async Task<string> CreateChatSession()
@@ -75,6 +77,7 @@ public class DeepSeekClient
         while (!reader.EndOfStream)
         {
             var line = await reader.ReadLineAsync();
+
             if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
@@ -85,91 +88,10 @@ public class DeepSeekClient
                 continue;
             }
 
-            var json = line[6..];
-
-            using var document = JsonDocument.Parse(json);
-            var root = document.RootElement;
-
-            if (root.TryGetProperty("p", out var p) && 
-                p.GetString() == "response/search_status")
+            foreach (var chunk in _chunkParser.Parse(line))
             {
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.SearchStatus,
-                    Text = root.GetProperty("v").GetString()
-                };
-                continue;
+                yield return chunk;
             }
-
-            if (root.TryGetProperty("p", out var p2) &&
-                p2.GetString() == "response/search_results")
-            {
-                var list = new List<SearchResult>();
-
-                foreach (var item in root.GetProperty("v").EnumerateArray())
-                {
-                    list.Add(new SearchResult
-                    {
-                        Url = item.GetProperty("url").GetString() ?? "",
-                        Title = item.GetProperty("title").GetString() ?? "",
-                        Snippet = item.GetProperty("snippet").GetString() ?? "",
-                        SiteName = item.GetProperty("site_name").GetString() ?? ""
-                    });
-                }
-
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.SearchResults,
-                    SearchResults = list,
-                    Raw = root
-                };
-                continue;
-            }
-
-            if (root.TryGetProperty("p", out var p3) &&
-                p3.GetString() == "response/content")
-            {
-                var op = root.TryGetProperty("o", out var o)
-                    ? o.GetString()
-                    : null;
-
-                var text = root.GetProperty("v").GetString();
-
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.Text,
-                    Text = text,
-                    Path = p3.GetString(),
-                    Operation = op
-                };
-
-                continue;
-            }
-
-            if (root.TryGetProperty("v", out var v))
-            {
-                if (v.ValueKind == JsonValueKind.String)
-                {
-                    yield return new DeepSeekChunk
-                    {
-                        Type = DeepSeekChunkType.Text,
-                        Text = v.GetString()
-                    };
-                    continue;
-                }
-
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.State,
-                    Raw = root
-                };
-            }
-
-            yield return new DeepSeekChunk
-            {
-                Type = DeepSeekChunkType.Unknown,
-                Raw = root
-            };
         }
     }
 
