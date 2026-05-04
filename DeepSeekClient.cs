@@ -57,16 +57,15 @@ public class DeepSeekClient
             search_enabled = search
         };
 
-        var req = CreateRequest(HttpMethod.Post, BaseUrl + "/chat/completion", body, pow);
+        var request = CreateRequest(HttpMethod.Post, BaseUrl + "/chat/completion", body, pow);
+        var result = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
-        var res = await _httpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead);
-
-        if (!res.IsSuccessStatusCode)
+        if (!result.IsSuccessStatusCode)
         {
-            throw new APIError("Request failed", (int)res.StatusCode);
+            throw new APIError("Request failed", (int)result.StatusCode);
         }
 
-        using var stream = await res.Content.ReadAsStreamAsync();
+        using var stream = await result.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(stream);
 
         while (!reader.EndOfStream)

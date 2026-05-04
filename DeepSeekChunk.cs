@@ -12,7 +12,7 @@ public class DeepSeekChunk
 
     public string? Operation { get; init; }
 
-    public JsonElement? Raw { get; init; }
-
     public List<SearchResult>? SearchResults { get; init; }
+
+    public JsonElement? Raw { get; init; }
 }
