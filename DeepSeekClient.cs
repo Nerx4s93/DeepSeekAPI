@@ -42,7 +42,7 @@ public class DeepSeekClient
             .GetString()!;
     }
 
-    public async IAsyncEnumerable<string> ChatCompletion(
+    public async IAsyncEnumerable<DeepSeekChunk> ChatCompletion(
         string sessionId,
         string prompt,
         string? parentMessageId = null,
@@ -81,17 +81,96 @@ public class DeepSeekClient
                 continue;
             }
 
-            if (line.StartsWith("data: "))
+            if (!line.StartsWith("data: "))
             {
-                var json = line[6..];
-
-                if (json.Contains("finish_reason"))
-                {
-                    yield break;
-                }    
-
-                yield return json;
+                continue;
             }
+
+            var json = line[6..];
+
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+
+            if (root.TryGetProperty("p", out var p) && 
+                p.GetString() == "response/search_status")
+            {
+                yield return new DeepSeekChunk
+                {
+                    Type = DeepSeekChunkType.SearchStatus,
+                    Text = root.GetProperty("v").GetString()
+                };
+                continue;
+            }
+
+            if (root.TryGetProperty("p", out var p2) &&
+                p2.GetString() == "response/search_results")
+            {
+                var list = new List<SearchResult>();
+
+                foreach (var item in root.GetProperty("v").EnumerateArray())
+                {
+                    list.Add(new SearchResult
+                    {
+                        Url = item.GetProperty("url").GetString() ?? "",
+                        Title = item.GetProperty("title").GetString() ?? "",
+                        Snippet = item.GetProperty("snippet").GetString() ?? "",
+                        SiteName = item.GetProperty("site_name").GetString() ?? ""
+                    });
+                }
+
+                yield return new DeepSeekChunk
+                {
+                    Type = DeepSeekChunkType.SearchResults,
+                    SearchResults = list,
+                    Raw = root
+                };
+                continue;
+            }
+
+            if (root.TryGetProperty("p", out var p3) &&
+                p3.GetString() == "response/content")
+            {
+                var op = root.TryGetProperty("o", out var o)
+                    ? o.GetString()
+                    : null;
+
+                var text = root.GetProperty("v").GetString();
+
+                yield return new DeepSeekChunk
+                {
+                    Type = DeepSeekChunkType.Text,
+                    Text = text,
+                    Path = p3.GetString(),
+                    Operation = op
+                };
+
+                continue;
+            }
+
+            if (root.TryGetProperty("v", out var v))
+            {
+                if (v.ValueKind == JsonValueKind.String)
+                {
+                    yield return new DeepSeekChunk
+                    {
+                        Type = DeepSeekChunkType.Text,
+                        Text = v.GetString()
+                    };
+                    continue;
+                }
+
+                yield return new DeepSeekChunk
+                {
+                    Type = DeepSeekChunkType.State,
+                    Raw = root
+                };
+            }
+
+            yield return new DeepSeekChunk
+            {
+                Type = DeepSeekChunkType.Unknown,
+                Raw = root
+            };
         }
     }
 
