@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace DeepSeekAPI;
@@ -73,6 +74,19 @@ public class DeepSeekChunkParser
                 {
                     Type = DeepSeekChunkType.Text,
                     Text = v.GetString()
+                };
+                yield break;
+            }
+
+            // Колхоз
+            if (v.ValueKind == JsonValueKind.Object &&
+                v.TryGetProperty("response", out var response) &&
+                response.TryGetProperty("content", out var content))
+            {
+                yield return new DeepSeekChunk
+                {
+                    Type = DeepSeekChunkType.Text,
+                    Text = content.GetString()
                 };
                 yield break;
             }
