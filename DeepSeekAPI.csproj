@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Wasmtime" Version="34.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="wasm\sha3_wasm_bg.7b9ca65ddd.wasm">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
