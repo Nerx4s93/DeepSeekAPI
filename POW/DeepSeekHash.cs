@@ -48,7 +48,7 @@ public class DeepSeekHash : IDisposable
     }
 
     public long? CalculateHash(string algorithm, string challenge, string salt,
-                              int difficulty, int expireAt)
+                              int difficulty, long expireAt)
     {
         var prefix = $"{salt}_{expireAt}_";
         var retptr = _addStack(-16);
