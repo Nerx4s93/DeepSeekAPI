@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
+using DeepSeekAPI.POW.Exceptions;
+
 namespace DeepSeekAPI.POW;
 
 public class DeepSeekPOW
