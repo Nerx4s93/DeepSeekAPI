@@ -12,7 +12,6 @@ public class DeepSeekClient
     private readonly string _authToken;
     private readonly DeepSeekPOW _deepSeekPow;
     private readonly HttpClient _httpClient;
-    private Dictionary<string, string> _cookies;
 
     public DeepSeekClient(string authToken)
     {
@@ -24,9 +23,6 @@ public class DeepSeekClient
         _authToken = authToken;
         _deepSeekPow = new DeepSeekPOW("wasm\\sha3_wasm_bg.7b9ca65ddd.wasm");
         _httpClient = new HttpClient();
-
-        _cookies = new Dictionary<string, string>();
-        LoadCookies();
     }
 
     public async Task<string> CreateChatSession()
@@ -215,24 +211,6 @@ public class DeepSeekClient
         }
 
         return req;
-    }
-
-    private void LoadCookies()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "cookies.json");
-
-        if (!File.Exists(path))
-        {
-            return;
-        }
-
-        var json = File.ReadAllText(path);
-        var doc = JsonDocument.Parse(json);
-
-        _cookies = doc.RootElement
-            .GetProperty("cookies")
-            .EnumerateObject()
-            .ToDictionary(x => x.Name, x => x.Value.GetString() ?? "");
     }
 
     private PowRequest GetPowChallenge(string targetpath)
