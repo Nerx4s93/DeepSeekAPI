@@ -13,22 +13,27 @@ public class DeepSeekPOW
 
     public string SolveChallenge(PowRequest config)
     {
-        long? answer = _hasher.CalculateHash(
-            config.algorithm,
-            config.challenge,
-            config.salt,
-            config.difficulty,
-            config.expire_at
+        var answer = _hasher.CalculateHash(
+            config.Algorithm,
+            config.Challenge,
+            config.Salt,
+            config.Difficulty,
+            config.ExpireAt
         );
 
-        var result = new Dictionary<string, object>
+        if (answer is null)
         {
-            ["algorithm"] = config.algorithm,
-            ["challenge"] = config.challenge,
-            ["salt"] = config.salt,
-            ["answer"] = answer!,
-            ["signature"] = config.signature,
-            ["target_path"] = config.target_path
+            throw new PowFailedException();
+        }
+
+        var result = new PowResponse
+        {
+            Algorithm = config.Algorithm,
+            Challenge = config.Challenge,
+            Salt = config.Salt,
+            Answer = answer.Value,
+            Signature = config.Signature,
+            TargetPath = config.TargetPath
         };
 
         var json = JsonSerializer.Serialize(result);
