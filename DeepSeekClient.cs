@@ -41,22 +41,25 @@ public class DeepSeekClient
         _chunkParser = new DeepSeekChunkParser();
     }
 
-    public async Task<string> CreateChatSession()
+    public async Task<ChatSession> CreateChatSession()
     {
-        var res = await PostAsync("/chat_session/create", new { character_id = (string?)null });
+        var response = await PostAsync("/chat_session/create", new { character_id = (string?)null });
 
-        var json = JsonDocument.Parse(res);
+        var json = JsonDocument.Parse(response);
 
-        return json.RootElement
+        return new ChatSession()
+        {
+            Id = json.RootElement
             .GetProperty("data")
             .GetProperty("biz_data")
             .GetProperty("chat_session")
             .GetProperty("id")
-            .GetString()!;
+            .GetString()!
+        };
     }
 
     public async IAsyncEnumerable<DeepSeekChunk> ChatCompletion(
-        string sessionId,
+        ChatSession chatSession,
         string prompt,
         string? parentMessageId = null,
         ModelType modelType = ModelType.Default,
@@ -67,7 +70,7 @@ public class DeepSeekClient
 
         var body = new
         {
-            chat_session_id = sessionId,
+            chat_session_id = chatSession.Id,
             parent_message_id = parentMessageId,
             model_type = modelType == ModelType.Default ? null : "expert",
             prompt,
@@ -114,7 +117,7 @@ public class DeepSeekClient
     }
 
     public async Task<List<DeepSeekChunk>> ChatCompletionAllChunksAsync(
-        string sessionId,
+        ChatSession chatSession,
         string prompt,
         string? parentMessageId = null,
         ModelType modelType = ModelType.Default,
@@ -124,7 +127,7 @@ public class DeepSeekClient
         var chunks = new List<DeepSeekChunk>();
 
         await foreach (var chunk in ChatCompletion(
-            sessionId,
+            chatSession,
             prompt,
             parentMessageId,
             modelType,
