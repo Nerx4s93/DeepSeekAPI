@@ -84,6 +84,7 @@ class ChatSettings
 - PatchEvent — обновления фрагментов (append / update)
 - SearchEvent — поиск и результаты
 - MetaEvent — служебные данные
+- StatusEvent — состояние генерации (WIP / FINISHED)
 
 ## Proof-of-Work (PoW)
 DeepSeek требует PoW для генерации ответов.
