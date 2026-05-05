@@ -1,25 +1,16 @@
 # DeepSeekAPI
-.NET клиент для DeepSeek Chat API с поддержкой стриминга, поиска и обхода Proof-of-Work (PoW) защиты.
+.NET клиент для DeepSeek Chat API с поддержкой стриминга, поиска, экспертного режима и автоматического обхода Proof-of-Work (PoW).
+
 Подходит для автоматизации, CLI-инструментов и кастомных клиентов.
 
-📄 [Changelog](CHANGELOG.md)
+[Changelog](CHANGELOG.md)
 
-## 🚀 Возможности
-- 💬 Отправка сообщений в DeepSeek Chat
-- ⚡ Стриминг ответа (чанками)
-- 🔍 Поддержка поиска (search mode)
-- 🧠 Поддержка thinking режима
-- 🧩 Парсинг SSE-ответов в удобные типы
-- 🔐 Автоматическое решение PoW через WASM
-- 📦 Минимум зависимостей (HttpClient + Wasmtime)
-- 🪶 Полностью типизированные модели
-
-## 📦 Установка
+## Установка
 ``` bash
 dotnet add package DeepSeekAPI --version 1.2.0
 ```
 
-## 🔑 Аутентификация
+## Аутентификация
 Нужен auth token от DeepSeek.
 Как получить:
 1. Откройте https://chat.deepseek.com
@@ -32,60 +23,77 @@ dotnet add package DeepSeekAPI --version 1.2.0
 - **Никогда не коммитьте токен в Git**
 - Токен даёт полный доступ к аккаунту
 
-## ⚡ Быстрый старт
+## Быстрый старт
 ```csharp
 using DeepSeekAPI;
+using DeepSeekAPI.Models.Chat;
 
 var client = new DeepSeekClient("YOUR_TOKEN");
 
-// создать новый чат
-var chatId = await client.CreateChatSession();
-Console.WriteLine("Chat id: " + chatId);
+// создать чат
+ChatSession chat = await client.CreateChatSession();
 
-// отправить сообщение
-await foreach (var chunk in client.ChatCompletion(chatId, "Привет"))
+// настройки запроса
+var settings = new ChatSettings
 {
- if (chunk.Type == DeepSeekChunkType.Text)
- {
-     Console.Write(chunk.Text);
- }
+    ModelType = ModelType.Expert,
+    Thinking = false,
+    Search = false
+};
+
+// отправка сообщения
+await foreach (var chunk in client.ChatCompletion(
+    chat,
+    settings,
+    "Привет"))
+{
+    if (chunk is TextEvent text)
+    {
+        Console.Write(text.Text);
+    }
+
+    if (chunk is MessageInitEvent init)
+    {
+        Console.WriteLine($"MessageId: {init.MessageId}");
+        Console.Write(init.Content);
+    }
 }
 ```
 
-## 🧠 Работа с чанками
-DeepSeek отдаёт ответ как поток (SSE), который парсится в DeepSeekChunk.
-Типы:
-- Text — текст ответа
-- SearchStatus — статус поиска
-- SearchResults — результаты поиска
-- State — служебные данные
-- Unknown — всё остальное
-
-## 🔐 Proof-of-Work (PoW)
-DeepSeek требует PoW для некоторых запросов.
-
-В библиотеке:
-- автоматически запрашивается challenge
-- решается через WASM (`wasm_solve`)
-- результат кодируется в Base64
-- добавляется в header: `x-ds-pow-response`
-
-Ничего делать не нужно — всё внутри DeepSeekClient.
-
-## ⚙️ Конфигурация запроса
+## Конфигурация запроса
 ``` C#
 ChatCompletion(
-    sessionId,
-    prompt,
-    parentMessageId: null,
-    thinking: true,
-    search: false
-);
+    ChatSession chatSession,
+    string prompt,
+    ChatSettings chatSettings,
+    string? parentMessageId = null
+)
+
+class ChatSettings
+{
+    ModelType ModelType;   // Default / Expert
+    bool Thinking;
+    bool Search;
+}
 ```
-thinking — включает reasoning
-search — включает веб-поиск
+
+## Модель событий (Streaming API)
+Ответ приходит как поток событий:
+- MessageInitEvent — инициализация сообщения (мета + первый фрагмент)
+- TextEvent — поток текста
+- PatchEvent — обновления фрагментов (append / update)
+- SearchEvent — поиск и результаты
+- MetaEvent — служебные данные
+
+## Proof-of-Work (PoW)
+DeepSeek требует PoW для генерации ответов.
+Библиотека автоматически:
+- получает challenge
+- решает через WASM
+- добавляет x-ds-pow-response
 
 ## ⚠️ Отказ от ответственности
 Этот проект не связан с DeepSeek.
+
 Использование приватного API может нарушать условия сервиса.
 Вы используете библиотеку на свой риск.
