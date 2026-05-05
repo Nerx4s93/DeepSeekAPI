@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 
-using DeepSeekAPI.POW.Exceptions;
+using DeepSeekAPI.PoW.Exceptions;
 
-namespace DeepSeekAPI.POW;
+namespace DeepSeekAPI.PoW;
 
 public class DeepSeekPOW
 {

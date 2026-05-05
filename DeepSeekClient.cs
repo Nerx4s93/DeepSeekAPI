@@ -1,5 +1,5 @@
 ﻿using DeepSeekAPI.Exceptions;
-using DeepSeekAPI.POW;
+using DeepSeekAPI.PoW;
 using System;
 using System.Collections.Generic;
 using System.IO;

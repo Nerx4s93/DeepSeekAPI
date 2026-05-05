@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using Wasmtime;
 
-namespace DeepSeekAPI.POW;
+namespace DeepSeekAPI.PoW;
 
 public class DeepSeekHash : IDisposable
 {
