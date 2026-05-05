@@ -104,6 +104,28 @@ public class DeepSeekClient
         }
     }
 
+    public async Task<List<DeepSeekChunk>> ChatCompletionAllChunksAsync(
+        string sessionId,
+        string prompt,
+        string? parentMessageId = null,
+        bool thinking = true,
+        bool search = false)
+    {
+        var chunks = new List<DeepSeekChunk>();
+
+        await foreach (var chunk in ChatCompletion(
+            sessionId,
+            prompt,
+            parentMessageId,
+            thinking,
+            search))
+        {
+            chunks.Add(chunk);
+        }
+
+        return chunks;
+    }
+
     private async Task<string> PostAsync(string endpoint, object body)
     {
         var req = CreateRequest(HttpMethod.Post, BaseUrl + endpoint, body);
