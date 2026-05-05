@@ -61,10 +61,8 @@ public class DeepSeekClient
     public async IAsyncEnumerable<DeepSeekChunk> ChatCompletion(
         ChatSession chatSession,
         string prompt,
-        string? parentMessageId = null,
-        ModelType modelType = ModelType.Default,
-        bool thinking = false,
-        bool search = false)
+        ChatSettings chatSettings,
+        string? parentMessageId = null)
     {
         var pow = _deepSeekPow.SolveChallenge(GetPowChallenge("/api/v0/chat/completion"));
 
@@ -72,11 +70,11 @@ public class DeepSeekClient
         {
             chat_session_id = chatSession.Id,
             parent_message_id = parentMessageId,
-            model_type = modelType == ModelType.Default ? null : "expert",
+            model_type = chatSettings.ModelType == ModelType.Default ? null : "expert",
             prompt,
             ref_file_ids = new string[0],
-            thinking_enabled = thinking,
-            search_enabled = search
+            thinking_enabled = chatSettings.Thinking,
+            search_enabled = chatSettings.Search
         };
 
         var request = CreateRequest(HttpMethod.Post, BaseUrl + "/chat/completion", body, pow);
@@ -119,20 +117,16 @@ public class DeepSeekClient
     public async Task<List<DeepSeekChunk>> ChatCompletionAllChunksAsync(
         ChatSession chatSession,
         string prompt,
-        string? parentMessageId = null,
-        ModelType modelType = ModelType.Default,
-        bool thinking = false,
-        bool search = false)
+        ChatSettings chatSettings,
+        string? parentMessageId = null)
     {
         var chunks = new List<DeepSeekChunk>();
 
         await foreach (var chunk in ChatCompletion(
             chatSession,
             prompt,
-            parentMessageId,
-            modelType,
-            thinking,
-            search))
+            chatSettings,
+            parentMessageId))
         {
             chunks.Add(chunk);
         }
