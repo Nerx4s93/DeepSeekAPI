@@ -1,4 +1,5 @@
 ﻿using DeepSeekAPI.Exceptions;
+using DeepSeekAPI.Models.Chat;
 using DeepSeekAPI.PoW;
 using System;
 using System.Collections.Generic;
@@ -49,6 +50,7 @@ public class DeepSeekClient
         return json.RootElement
             .GetProperty("data")
             .GetProperty("biz_data")
+            .GetProperty("chat_session")
             .GetProperty("id")
             .GetString()!;
     }
@@ -57,7 +59,8 @@ public class DeepSeekClient
         string sessionId,
         string prompt,
         string? parentMessageId = null,
-        bool thinking = true,
+        ModelType modelType = ModelType.Default,
+        bool thinking = false,
         bool search = false)
     {
         var pow = _deepSeekPow.SolveChallenge(GetPowChallenge("/api/v0/chat/completion"));
@@ -66,6 +69,7 @@ public class DeepSeekClient
         {
             chat_session_id = sessionId,
             parent_message_id = parentMessageId,
+            model_type = modelType == ModelType.Default ? null : "expert",
             prompt,
             ref_file_ids = new string[0],
             thinking_enabled = thinking,
@@ -83,9 +87,14 @@ public class DeepSeekClient
         using var stream = await result.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(stream);
 
-        while (!reader.EndOfStream)
+        while (true)
         {
             var line = await reader.ReadLineAsync();
+
+            if (line is null)
+            {
+                break;
+            }    
 
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -108,7 +117,8 @@ public class DeepSeekClient
         string sessionId,
         string prompt,
         string? parentMessageId = null,
-        bool thinking = true,
+        ModelType modelType = ModelType.Default,
+        bool thinking = false,
         bool search = false)
     {
         var chunks = new List<DeepSeekChunk>();
@@ -117,6 +127,7 @@ public class DeepSeekClient
             sessionId,
             prompt,
             parentMessageId,
+            modelType,
             thinking,
             search))
         {
@@ -153,7 +164,7 @@ public class DeepSeekClient
         req.Headers.Add("x-app-version", "20241129.1");
         req.Headers.Add("x-client-locale", "en_US");
         req.Headers.Add("x-client-platform", "web");
-        req.Headers.Add("x-client-version", "1.0.0-always");
+        req.Headers.Add("x-client-version", "2.0.0");
 
         if (pow != null)
         {
