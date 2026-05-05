@@ -1,6 +1,7 @@
 ﻿using DeepSeekAPI.Exceptions;
 using DeepSeekAPI.Models.Chat;
 using DeepSeekAPI.PoW;
+using DeepSeekAPI.Streaming;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -58,7 +59,7 @@ public class DeepSeekClient
         };
     }
 
-    public async IAsyncEnumerable<DeepSeekChunk> ChatCompletion(
+    public async IAsyncEnumerable<DeepSeekEvent> ChatCompletion(
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
@@ -107,20 +108,22 @@ public class DeepSeekClient
                 continue;
             }
 
-            foreach (var chunk in _chunkParser.Parse(line))
+            var chunk = _chunkParser.Parse(line);
+
+            if (chunk != null)
             {
                 yield return chunk;
             }
         }
     }
 
-    public async Task<List<DeepSeekChunk>> ChatCompletionAllChunksAsync(
+    public async Task<List<DeepSeekEvent>> ChatCompletionAllChunksAsync(
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
         string? parentMessageId = null)
     {
-        var chunks = new List<DeepSeekChunk>();
+        var chunks = new List<DeepSeekEvent>();
 
         await foreach (var chunk in ChatCompletion(
             chatSession,

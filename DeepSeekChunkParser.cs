@@ -1,108 +1,100 @@
-﻿using System;
+﻿using DeepSeekAPI.Streaming;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace DeepSeekAPI;
 
 public class DeepSeekChunkParser
 {
-    public IEnumerable<DeepSeekChunk> Parse(string line)
+    public DeepSeekEvent? Parse(string line)
     {
-        var json = line[6..];
-
-        using var document = JsonDocument.Parse(json);
-        var root = document.RootElement;
-
-        if (root.TryGetProperty("p", out var p) &&
-            p.GetString() == "response/search_status")
+        if (!line.StartsWith("data: "))
         {
-            yield return new DeepSeekChunk
-            {
-                Type = DeepSeekChunkType.SearchStatus,
-                Text = root.GetProperty("v").GetString()
-            };
-            yield break;
+            return null;
+        }    
+
+        var json = line.Substring(6);
+
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        if (root.TryGetProperty("p", out var p))
+        {
+            var path = p.GetString();
+            var op = root.TryGetProperty("o", out var o)? o.GetString() : null;
+            var value = root.TryGetProperty("v", out var v) ? v.ToString() : "";
+            return new PatchEvent(path, op, value);
         }
 
-        if (root.TryGetProperty("p", out var p2) &&
-            p2.GetString() == "response/search_results")
+        if (root.TryGetProperty("v", out var vOnly))
         {
-            var list = new List<SearchResult>();
+            return ParseV(vOnly);
+        }
 
-            foreach (var item in root.GetProperty("v").EnumerateArray())
+        return ParseMeta(root);
+    }
+
+    private DeepSeekEvent? ParseV(JsonElement v)
+    {
+        if (v.ValueKind == JsonValueKind.String)
+        {
+            return new TextEvent(v.GetString()!);
+        }
+
+        if (v.ValueKind == JsonValueKind.Object)
+        {
+            if (v.TryGetProperty("response", out var response))
             {
-                list.Add(new SearchResult
-                {
-                    Url = item.GetProperty("url").GetString() ?? "",
-                    Title = item.GetProperty("title").GetString() ?? "",
-                    Snippet = item.GetProperty("snippet").GetString() ?? "",
-                    SiteName = item.GetProperty("site_name").GetString() ?? ""
-                });
+                var firstContent = response.GetProperty("fragments")
+                        .EnumerateArray()
+                        .FirstOrDefault()
+                        .GetProperty("content")
+                        .GetString() ?? "";
+
+                return new MessageInitEvent(
+                    response.GetProperty("message_id").GetInt64(),
+                    response.GetProperty("parent_id").GetInt64(),
+                    response.GetProperty("role").GetString() ?? "",
+                    response.GetProperty("thinking_enabled").GetBoolean(),
+                    response.GetProperty("search_enabled").GetBoolean(),
+                    response.GetProperty("status").GetString() ?? "",
+                    firstContent
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private DeepSeekEvent? ParseMeta(JsonElement root)
+    {
+        if (root.TryGetProperty("p", out var p))
+        {
+            var path = p.GetString();
+
+            if (path == "response/status")
+            {
+                var status = root.GetProperty("v").GetString();
+                return new StatusEvent(status ?? "");
             }
 
-            yield return new DeepSeekChunk
+            if (path == "response/fragments/-1/content")
             {
-                Type = DeepSeekChunkType.SearchResults,
-                SearchResults = list,
-                Raw = root
-            };
-            yield break;
-        }
-
-        if (root.TryGetProperty("p", out var p3) &&
-            p3.GetString() == "response/content")
-        {
-            var op = root.TryGetProperty("o", out var o)
-                ? o.GetString()
-                : null;
-
-            yield return new DeepSeekChunk
-            {
-                Type = DeepSeekChunkType.Text,
-                Text = root.GetProperty("v").GetString(),
-                Path = p3.GetString(),
-                Operation = op
-            };
-            yield break;
-        }
-
-        if (root.TryGetProperty("v", out var v))
-        {
-            if (v.ValueKind == JsonValueKind.String)
-            {
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.Text,
-                    Text = v.GetString()
-                };
-                yield break;
+                return new PatchEvent(
+                    path,
+                    root.GetProperty("o").GetString(),
+                    root.GetProperty("v").ToString()
+                );
             }
 
-            // Колхоз
-            if (v.ValueKind == JsonValueKind.Object &&
-                v.TryGetProperty("response", out var response) &&
-                response.TryGetProperty("content", out var content))
+            if (path == "update_session")
             {
-                yield return new DeepSeekChunk
-                {
-                    Type = DeepSeekChunkType.Text,
-                    Text = content.GetString()
-                };
-                yield break;
+                return new MetaEvent("update_session", root.GetProperty("v").ToString());
             }
-
-            yield return new DeepSeekChunk
-            {
-                Type = DeepSeekChunkType.State,
-                Raw = root
-            };
-            yield break;
         }
 
-        yield return new DeepSeekChunk
-        {
-            Type = DeepSeekChunkType.Unknown,
-            Raw = root
-        };
+        return new MetaEvent("unknown", root.ToString());
     }
 }
