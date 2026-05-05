@@ -24,11 +24,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="wasm\sha3_wasm_bg.7b9ca65ddd.wasm">
-			<Pack>True</Pack>
-			<PackagePath>wasm\</PackagePath>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<EmbeddedResource Include="Resources\**\*">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
 	</ItemGroup>
-
 </Project>

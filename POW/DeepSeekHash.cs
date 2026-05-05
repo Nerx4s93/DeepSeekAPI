@@ -17,7 +17,7 @@ public class DeepSeekHash : IDisposable
     private readonly Func<int, int> _addStack;
     private readonly Function _wasmSolve;
 
-    public DeepSeekHash(string wasmPath)
+    public DeepSeekHash(byte[] moduleBytes)
     {
         _engine = new Engine();
         _store = new Store(_engine);
@@ -25,7 +25,7 @@ public class DeepSeekHash : IDisposable
 
         _linker.DefineWasi();
 
-        var module = Module.FromFile(_engine, wasmPath);
+        var module = Module.FromBytes(_engine, "deepseek_sha3", moduleBytes);
         _instance = _linker.Instantiate(_store, module);
 
         _memory = _instance.GetMemory("memory")!;

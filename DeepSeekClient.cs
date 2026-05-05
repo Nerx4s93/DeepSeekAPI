@@ -1,5 +1,6 @@
 ﻿using DeepSeekAPI.Exceptions;
 using DeepSeekAPI.POW;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -26,7 +27,15 @@ public class DeepSeekClient
         }
 
         _authToken = authToken;
-        _deepSeekPow = new DeepSeekPOW("wasm\\sha3_wasm_bg.7b9ca65ddd.wasm");
+
+        var bytes = ResourcesDataLoader.GetDataBytes("wasm.sha3_wasm_bg.7b9ca65ddd.wasm");
+
+        if (bytes == null)
+        {
+            throw new InvalidOperationException("Failed to load WASM module");
+        }
+
+        _deepSeekPow = new DeepSeekPOW(bytes);
         _httpClient = new HttpClient();
         _chunkParser = new DeepSeekChunkParser();
     }

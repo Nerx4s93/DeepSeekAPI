@@ -11,7 +11,7 @@ public class DeepSeekPOW
 {
     private readonly DeepSeekHash _hasher;
 
-    public DeepSeekPOW(string wasmPath) => _hasher = new DeepSeekHash(wasmPath);
+    public DeepSeekPOW(byte[] moduleBytes) => _hasher = new DeepSeekHash(moduleBytes);
 
     public string SolveChallenge(PowRequest config)
     {
