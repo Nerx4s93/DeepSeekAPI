@@ -1,3 +1,5 @@
+### [-----EN-----] [[-----RU-----]](docs/README_RU.md)
+
 # DeepSeekAPI
 .NET client for the DeepSeek Chat API with support for streaming, search, expert mode, and automatic Proof-of-Work (PoW) handling.
 
