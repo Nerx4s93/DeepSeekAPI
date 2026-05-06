@@ -1,39 +1,39 @@
 # DeepSeekAPI
-.NET клиент для DeepSeek Chat API с поддержкой стриминга, поиска, экспертного режима и автоматического обхода Proof-of-Work (PoW).
+.NET client for the DeepSeek Chat API with support for streaming, search, expert mode, and automatic Proof-of-Work (PoW) handling.
 
-Подходит для автоматизации, CLI-инструментов и кастомных клиентов.
+Suitable for automation, CLI tools, and custom clients.
 
-[Changelog](CHANGELOG.md)
+[docs\Changelog](CHANGELOG.md)
 
-## Установка
+## Installation
 ``` bash
 dotnet add package DeepSeekAPI --version 1.2.0
 ```
 
-## Аутентификация
-Нужен auth token от DeepSeek.
-Как получить:
-1. Откройте https://chat.deepseek.com
-2. Откройте DevTools (`F12`)
-3. Вкладка **Application → Local Storage**
-4. Найдите ключ `userToken`
-5. Скопируйте значение `value`
+## Authentication
+An auth token from DeepSeek is required.
+How to obtain it:
+1. Open https://chat.deepseek.com
+2. Open DevTools (**F12**)
+3. Go to **Application → Local Storage**
+4. Find the `userToken` key
+5. Copy its `value`
 
-### ⚠️ Важно
-- **Никогда не коммитьте токен в Git**
-- Токен даёт полный доступ к аккаунту
+### ⚠ Important
+**Never commit your token to Git**
+The token provides full access to your account
 
-## Быстрый старт
+## Quick Start
 ```csharp
 using DeepSeekAPI;
 using DeepSeekAPI.Models.Chat;
 
 var client = new DeepSeekClient("YOUR_TOKEN");
 
-// создать чат
+// create chat
 ChatSession chat = await client.CreateChatSession();
 
-// настройки запроса
+// request settings
 var settings = new ChatSettings
 {
     ModelType = ModelType.Expert,
@@ -41,7 +41,7 @@ var settings = new ChatSettings
     Search = false
 };
 
-// отправка сообщения
+// send message
 await foreach (var chunk in client.ChatCompletion(
     chat,
     settings,
@@ -60,7 +60,7 @@ await foreach (var chunk in client.ChatCompletion(
 }
 ```
 
-## Конфигурация запроса
+## Request Configuration
 ``` C#
 ChatCompletion(
     ChatSession chatSession,
@@ -77,24 +77,24 @@ class ChatSettings
 }
 ```
 
-## Модель событий (Streaming API)
-Ответ приходит как поток событий:
-- MessageInitEvent — инициализация сообщения (мета + первый фрагмент)
-- TextEvent — поток текста
-- PatchEvent — обновления фрагментов (append / update)
-- SearchEvent — поиск и результаты
-- MetaEvent — служебные данные
-- StatusEvent — состояние генерации (WIP / FINISHED)
+## Event Model (Streaming API)
+The response is delivered as a stream of events:	
+- MessageInitEvent — message initialization (metadata + first chunk)
+- TextEvent — text stream
+- PatchEvent — partial updates (append / update)
+- SearchEvent — search queries and results
+- MetaEvent — service metadata
+- StatusEvent — generation state (WIP / FINISHED)
 
 ## Proof-of-Work (PoW)
-DeepSeek требует PoW для генерации ответов.
-Библиотека автоматически:
-- получает challenge
-- решает через WASM
-- добавляет x-ds-pow-response
+DeepSeek requires PoW for generating responses.
+The library automatically:
+- retrieves the challenge
+- solves it via WASM
+- attaches x-ds-pow-response
 
-## ⚠️ Отказ от ответственности
-Этот проект не связан с DeepSeek.
+## ⚠️ Disclaimer
+This project is not affiliated with DeepSeek.
 
-Использование приватного API может нарушать условия сервиса.
-Вы используете библиотеку на свой риск.
+Using a private API may violate the service terms.
+You use this library at your own risk.
