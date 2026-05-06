@@ -63,7 +63,7 @@ public class DeepSeekClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        string? parentMessageId = null)
+        long? parentMessageId = null)
     {
         var pow = _deepSeekPow.SolveChallenge(GetPowChallenge("/api/v0/chat/completion"));
 
@@ -121,7 +121,7 @@ public class DeepSeekClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        string? parentMessageId = null)
+        long? parentMessageId = null)
     {
         var chunks = new List<DeepSeekEvent>();
 
