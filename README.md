@@ -3,7 +3,7 @@
 
 Suitable for automation, CLI tools, and custom clients.
 
-[docs\Changelog](CHANGELOG.md)
+[Changelog](docs/CHANGELOG_EN.md)
 
 ## Installation
 ``` bash
