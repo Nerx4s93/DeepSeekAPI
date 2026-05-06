@@ -47,7 +47,7 @@ var settings = new ChatSettings
 await foreach (var chunk in client.ChatCompletion(
     chat,
     settings,
-    "Привет"))
+    "Hello"))
 {
     if (chunk is TextEvent text)
     {
