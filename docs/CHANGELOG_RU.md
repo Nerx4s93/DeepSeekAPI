@@ -1,3 +1,6 @@
+## 1.2.1
+- Исправлена ошибка неверной типизации в методе `ChatCompletion`: `string? parentMessageId` -> `long? parentMessageId`
+
 ## 1.2.0
 - Добавлена поддержка экспертного режима (`ModelType.Expert`) через `ChatSettings`.
 - Добавлена типизированная модель `ChatSession` для представления сессии чата.

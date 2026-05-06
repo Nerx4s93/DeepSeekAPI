@@ -9,7 +9,7 @@
 
 ## Установка
 ``` bash
-dotnet add package DeepSeekAPI --version 1.2.0
+dotnet add package DeepSeekAPI --version 1.2.1
 ```
 
 ## Аутентификация

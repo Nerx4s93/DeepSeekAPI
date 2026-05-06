@@ -1,3 +1,6 @@
+## 1.2.1
+- Fixed a typing error in the `ChatCompletion` method: `string? parentMessageId` -> `long? parentMessageId`
+
 ## 1.2.0
 - Added support for expert mode (`ModelType.Expert`) via `ChatSettings`.
 - Introduced a typed `ChatSession` model to represent a chat session.

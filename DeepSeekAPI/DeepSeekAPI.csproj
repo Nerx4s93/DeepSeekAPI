@@ -7,10 +7,10 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>DeepSeekAPI</PackageId>
-		<Version>1.2.0</Version>
+		<Version>1.2.1</Version>
 		<Authors>Nerx4s93</Authors>
-		<Description>.NET client for DeepSeek Chat API with PoW support</Description>
-		<PackageTags>deepseek;api;chat;pow;wasm</PackageTags>
+		<Description>.NET client for DeepSeek Chat API</Description>
+		<PackageTags>deepseek;api;chat;pow;wasm;ai;free</PackageTags>
 
 		<RepositoryUrl>https://github.com/Nerx4s93/DeepSeekAPI</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
