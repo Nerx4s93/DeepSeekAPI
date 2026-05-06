@@ -108,13 +108,57 @@ public class DeepSeekClient
                 continue;
             }
 
-            var chunk = _chunkParser.Parse(line);
-
-            if (chunk != null)
+            var deepSeekEvent = _chunkParser.Parse(line);
+            
+            if (deepSeekEvent != null)
             {
-                yield return chunk;
+                GenerateException(deepSeekEvent);
+                yield return deepSeekEvent;
             }
         }
+    }
+
+    private void GenerateException(DeepSeekEvent deepSeekEvent)
+    {
+        if (deepSeekEvent is not MetaEvent metaEvent || string.IsNullOrEmpty(metaEvent.Value))
+        {
+            return;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(metaEvent.Value);
+            var root = document.RootElement;
+
+            if (!root.TryGetProperty("type", out var typeProp))
+            {
+                return;
+            }
+
+            var type = typeProp.GetString();
+
+            if (type != "error")
+            {
+                return;
+            }
+
+            var content = root.TryGetProperty("content", out var contentProp)
+                ? contentProp.GetString()
+                : "Unknown error";
+
+            var reason = root.TryGetProperty("finish_reason", out var reasonProp)
+                ? reasonProp.GetString()
+                : null;
+
+            switch (reason)
+            {
+                case "rate_limit_reached":
+                    throw new RateLimitError(content ?? "");
+                default:
+                    throw new APIError(content ?? "Unknown API error", 0);
+            }
+        }
+        catch (JsonException) { }
     }
 
     public async Task<List<DeepSeekEvent>> ChatCompletionAllChunksAsync(
