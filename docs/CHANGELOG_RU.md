@@ -1,3 +1,6 @@
+## 1.2.2
+- - Добавлена обработка rate limit ошибок: ответы `MetaEvent` с `finish_reason = rate_limit_reached` теперь автоматически распознаются и преобразуются в исключение `RateLimitError`.
+
 ## 1.2.1
 - Исправлена ошибка неверной типизации в методе `ChatCompletion`: `string? parentMessageId` -> `long? parentMessageId`
 
