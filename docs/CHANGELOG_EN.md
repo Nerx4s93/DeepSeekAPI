@@ -1,3 +1,6 @@
+## 1.2.3
+- Added a project icon.
+
 ## 1.2.2
 - Added rate limit error handling: `MetaEvent` responses with `finish_reason = rate_limit_reached` are now detected and converted into a `RateLimitError` exception.
 

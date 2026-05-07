@@ -9,7 +9,7 @@ Suitable for automation, CLI tools, and custom clients.
 
 ## Installation
 ``` bash
-dotnet add package DeepSeekAPI --version 1.2.2
+dotnet add package DeepSeekAPI --version 1.2.3
 ```
 
 ## Authentication
