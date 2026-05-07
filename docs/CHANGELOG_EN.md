@@ -1,6 +1,7 @@
 ## 1.2.4
 - Added a mode for streaming token output as strings.
 - The mode for streaming tokens as events has been retained and continues to be supported without changes.
+- Added support for net8.0 and net9.0
 
 ## 1.2.3
 - Added a project icon.
