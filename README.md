@@ -9,7 +9,7 @@ Suitable for automation, CLI tools, and custom clients.
 
 ## Installation
 ``` bash
-dotnet add package DeepSeekAPI --version 1.2.3
+dotnet add package DeepSeekAPI --version 1.2.4
 ```
 
 ## Authentication
@@ -39,31 +39,29 @@ ChatSession chat = await client.CreateChatSession();
 var settings = new ChatSettings
 {
     ModelType = ModelType.Expert,
-    Thinking = false,
+    Thinking = true,
     Search = false
 };
 
 // send message
-await foreach (var chunk in client.ChatCompletion(
-    chat,
-    settings,
-    "Hello"))
+await foreach (var token in client.SendMessageStream(
+    chatSession,
+    "Привет",
+    chatSettings))
 {
-    if (chunk is TextEvent text)
-    {
-        Console.Write(text.Text);
-    }
-
-    if (chunk is MessageInitEvent init)
-    {
-        Console.WriteLine($"MessageId: {init.MessageId}");
-        Console.Write(init.Content);
-    }
+    Console.Write(token.Text);
 }
 ```
 
 ## Request Configuration
 ``` C#
+SendMessageStream(
+    ChatSession chatSession,
+    string prompt,
+    ChatSettings chatSettings,
+    string? parentMessageId = null
+)
+
 ChatCompletion(
     ChatSession chatSession,
     string prompt,

@@ -1,3 +1,7 @@
+## 1.2.4
+- Added a mode for streaming token output as strings.
+- The mode for streaming tokens as events has been retained and continues to be supported without changes.
+
 ## 1.2.3
 - Added a project icon.
 
