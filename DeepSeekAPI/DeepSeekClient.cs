@@ -60,17 +60,16 @@ public class DeepSeekClient
         };
     }
 
-    public async Task<MessageResponse> SendMessage(
+    public async IAsyncEnumerable<StreamToken> SendMessageStream(
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
         long? parentMessageId = null)
     {
         var messageId = 0L;
-        var answer = "";
-
         var thinkingAnswerStart = false;
         var thinking = false;
+
         await foreach (var chunk in ChatCompletion(
             chatSession,
             prompt,
@@ -82,39 +81,35 @@ public class DeepSeekClient
                 messageId = messageInitEvent.MessageId;
                 thinking = messageInitEvent.ThinkingEnabled;
 
-                if (!thinking)
+                if (!thinking && !string.IsNullOrEmpty(messageInitEvent.Content))
                 {
-                    answer += messageInitEvent.Content;
+                    yield return new StreamToken(messageId, messageInitEvent.Content);
                 }
             }
             else if (chunk is TextEvent textEvent)
             {
                 if (!thinking || thinkingAnswerStart)
                 {
-                    answer += textEvent.Text;
+                    yield return new StreamToken(messageId, textEvent.Text);
                 }
             }
             else if (chunk is PatchEvent patchEvent)
             {
-                HandlePatch(patchEvent, thinking, ref thinkingAnswerStart, ref answer);
+                var token = HandlePatch(patchEvent, thinking, ref thinkingAnswerStart);
+
+                if (token != null)
+                {
+                    yield return new StreamToken(messageId, token);
+                }
             }
-
-            Console.WriteLine(chunk);
         }
-
-        return new MessageResponse(messageId, answer);
     }
 
-    private void HandlePatch(
-        PatchEvent patchEvent,
-        bool thinking,
-        ref bool thinkingAnswerStart,
-        ref string answer)
+    private string? HandlePatch(PatchEvent patchEvent, bool thinking, ref bool thinkingAnswerStart)
     {
         if (patchEvent.Path == "response/fragments/-1/elapsed_secs")
         {
             thinkingAnswerStart = true;
-            return;
         }
 
         if (!thinking || thinkingAnswerStart)
@@ -125,29 +120,27 @@ public class DeepSeekClient
                     {
                         var json = patchEvent.Value?.ToString();
 
-                        if (!string.IsNullOrEmpty(json))
+                        if (string.IsNullOrEmpty(json))
                         {
-                            using var doc = System.Text.Json.JsonDocument.Parse(json);
-
-                            foreach (var item in doc.RootElement.EnumerateArray())
-                            {
-                                if (item.TryGetProperty("content", out var content))
-                                {
-                                    answer += content.GetString();
-                                }
-                            }
+                            return null;
                         }
 
-                        break;
+                        using var document = JsonDocument.Parse(json);
+                        var stringBuilder = new StringBuilder();
+
+                        var content = document.RootElement[0]
+                            .GetProperty("content")
+                            .GetString();
+
+                        return content;
                     }
 
                 case "response/fragments/-1/content":
-                    {
-                        answer += patchEvent.Value?.ToString();
-                        break;
-                    }
+                    return patchEvent.Value?.ToString();
             }
         }
+
+        return null;
     }
 
     public async Task<List<DeepSeekEvent>> ChatCompletionAllChunksAsync(
