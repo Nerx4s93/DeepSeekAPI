@@ -1,4 +1,5 @@
 ﻿using DeepSeekAPI.Exceptions;
+using DeepSeekAPI.Models;
 using DeepSeekAPI.Models.Chat;
 using DeepSeekAPI.PoW;
 using DeepSeekAPI.Streaming;
@@ -59,6 +60,116 @@ public class DeepSeekClient
         };
     }
 
+    public async Task<MessageResponse> SendMessage(
+        ChatSession chatSession,
+        string prompt,
+        ChatSettings chatSettings,
+        long? parentMessageId = null)
+    {
+        var messageId = 0L;
+        var answer = "";
+
+        var thinkingAnswerStart = false;
+        var thinking = false;
+        await foreach (var chunk in ChatCompletion(
+            chatSession,
+            prompt,
+            chatSettings,
+            parentMessageId))
+        {
+            if (chunk is MessageInitEvent messageInitEvent)
+            {
+                messageId = messageInitEvent.MessageId;
+                thinking = messageInitEvent.ThinkingEnabled;
+
+                if (!thinking)
+                {
+                    answer += messageInitEvent.Content;
+                }
+            }
+            else if (chunk is TextEvent textEvent)
+            {
+                if (!thinking || thinkingAnswerStart)
+                {
+                    answer += textEvent.Text;
+                }
+            }
+            else if (chunk is PatchEvent patchEvent)
+            {
+                HandlePatch(patchEvent, thinking, ref thinkingAnswerStart, ref answer);
+            }
+
+            Console.WriteLine(chunk);
+        }
+
+        return new MessageResponse(messageId, answer);
+    }
+
+    private void HandlePatch(
+        PatchEvent patchEvent,
+        bool thinking,
+        ref bool thinkingAnswerStart,
+        ref string answer)
+    {
+        if (patchEvent.Path == "response/fragments/-1/elapsed_secs")
+        {
+            thinkingAnswerStart = true;
+            return;
+        }
+
+        if (!thinking || thinkingAnswerStart)
+        {
+            switch (patchEvent.Path)
+            {
+                case "response/fragments":
+                    {
+                        var json = patchEvent.Value?.ToString();
+
+                        if (!string.IsNullOrEmpty(json))
+                        {
+                            using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+                            foreach (var item in doc.RootElement.EnumerateArray())
+                            {
+                                if (item.TryGetProperty("content", out var content))
+                                {
+                                    answer += content.GetString();
+                                }
+                            }
+                        }
+
+                        break;
+                    }
+
+                case "response/fragments/-1/content":
+                    {
+                        answer += patchEvent.Value?.ToString();
+                        break;
+                    }
+            }
+        }
+    }
+
+    public async Task<List<DeepSeekEvent>> ChatCompletionAllChunksAsync(
+        ChatSession chatSession,
+        string prompt,
+        ChatSettings chatSettings,
+        long? parentMessageId = null)
+    {
+        var chunks = new List<DeepSeekEvent>();
+
+        await foreach (var chunk in ChatCompletion(
+            chatSession,
+            prompt,
+            chatSettings,
+            parentMessageId))
+        {
+            chunks.Add(chunk);
+        }
+
+        return chunks;
+    }
+
     public async IAsyncEnumerable<DeepSeekEvent> ChatCompletion(
         ChatSession chatSession,
         string prompt,
@@ -96,7 +207,7 @@ public class DeepSeekClient
             if (line is null)
             {
                 break;
-            }    
+            }
 
             if (string.IsNullOrWhiteSpace(line))
             {
@@ -109,7 +220,7 @@ public class DeepSeekClient
             }
 
             var deepSeekEvent = _chunkParser.Parse(line);
-            
+
             if (deepSeekEvent != null)
             {
                 GenerateException(deepSeekEvent);
@@ -159,26 +270,6 @@ public class DeepSeekClient
             }
         }
         catch (JsonException) { }
-    }
-
-    public async Task<List<DeepSeekEvent>> ChatCompletionAllChunksAsync(
-        ChatSession chatSession,
-        string prompt,
-        ChatSettings chatSettings,
-        long? parentMessageId = null)
-    {
-        var chunks = new List<DeepSeekEvent>();
-
-        await foreach (var chunk in ChatCompletion(
-            chatSession,
-            prompt,
-            chatSettings,
-            parentMessageId))
-        {
-            chunks.Add(chunk);
-        }
-
-        return chunks;
     }
 
     private async Task<string> PostAsync(string endpoint, object body)
