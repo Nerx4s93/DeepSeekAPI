@@ -1,9 +1,9 @@
-﻿using System.Text.Json.Serialization;
+﻿namespace DeepSeekAPI.Models.Chat;
 
-namespace DeepSeekAPI.Models.Chat;
-
-public class ChatSession
-{
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
-}
+public record ChatSession(
+    string Id,
+    string? Title = null,
+    string? TitleType = null,
+    bool? Pinned = false,
+    ModelType? ModelType = null,
+    double? UpdatedAt = null);

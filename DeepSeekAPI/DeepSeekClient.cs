@@ -42,13 +42,12 @@ public class DeepSeekClient
         _httpClient = new HttpClient();
         _chunkParser = new DeepSeekChunkParser();
     }
-    
 
     public async Task<UserProfile> GetUserProfileAsync()
     {
         var response = await GetAsync("/users/current");
 
-        var json = JsonDocument.Parse(response);
+        using var json = JsonDocument.Parse(response);
 
         var id = json.RootElement
             .GetProperty("data")
@@ -69,21 +68,58 @@ public class DeepSeekClient
         return new UserProfile(id, email, mobileNumber);
     }
 
+    public async Task<List<ChatSession>> GetChatSessionsAsync(double? updateAt = null)
+    {
+        var query = QueryParametersBuilder.Create()
+            .AddParameter("lte_cursor.pinned", false)
+            .AddParameterIf(updateAt.HasValue, "lte_cursor.updated_at", updateAt.ToString()!.Replace(",", "."))
+            .Build();
+
+        var endpoint = $"/chat_session/fetch_page{query}";
+        Console.WriteLine(endpoint);
+        var response = await GetAsync(endpoint);
+
+        using var json = JsonDocument.Parse(response);
+
+        var result = new List<ChatSession>();
+
+        var items = json.RootElement
+            .GetProperty("data")
+            .GetProperty("biz_data")
+            .GetProperty("chat_sessions");
+
+        foreach (var item in items.EnumerateArray())
+        {
+            var id = item.GetProperty("id").GetString()!;
+            var title = item.GetProperty("title").GetString()!;
+            var titleType = item.GetProperty("title_type").GetString()!;
+            var pinned = item.GetProperty("pinned").GetBoolean()!;
+            var modelType = item.GetProperty("model_type").GetString()! == "default" ?
+                ModelType.Default : ModelType.Expert; ;
+            var updatedAt = item.GetProperty("updated_at").GetDouble()!;
+
+            var session = new ChatSession(id, title, titleType, pinned, modelType, updatedAt);
+
+            result.Add(session);
+        }
+
+        return result;
+    }
+
     public async Task<ChatSession> CreateChatSessionAsync()
     {
         var response = await PostAsync("/chat_session/create", new { character_id = (string?)null });
 
-        var json = JsonDocument.Parse(response);
+        using var json = JsonDocument.Parse(response);
 
-        return new ChatSession()
-        {
-            Id = json.RootElement
+        var id = json.RootElement
             .GetProperty("data")
             .GetProperty("biz_data")
             .GetProperty("chat_session")
             .GetProperty("id")
-            .GetString()!
-        };
+            .GetString()!;
+
+        return new ChatSession(id);
     }
 
     #region Отправка сообщения
