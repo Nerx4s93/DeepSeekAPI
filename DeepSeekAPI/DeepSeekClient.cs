@@ -42,8 +42,33 @@ public class DeepSeekClient
         _httpClient = new HttpClient();
         _chunkParser = new DeepSeekChunkParser();
     }
+    
 
-    public async Task<ChatSession> CreateChatSession()
+    public async Task<UserProfile> GetUserProfileAsync()
+    {
+        var response = await GetAsync("/users/current", "");
+
+        var json = JsonDocument.Parse(response);
+
+        var id = json.RootElement
+            .GetProperty("data")
+            .GetProperty("biz_data")
+            .GetProperty("id")
+            .GetString()!;
+        var email = json.RootElement
+            .GetProperty("data")
+            .GetProperty("biz_data")
+            .GetProperty("id")
+            .GetString()!;
+        var mobileNumber = json.RootElement
+            .GetProperty("data")
+            .GetProperty("biz_data")
+            .GetProperty("id")
+            .GetString()!;
+
+        return new UserProfile(id, email, mobileNumber);
+    }
+    public async Task<ChatSession> CreateChatSessionAsync()
     {
         var response = await PostAsync("/chat_session/create", new { character_id = (string?)null });
 
@@ -59,6 +84,8 @@ public class DeepSeekClient
             .GetString()!
         };
     }
+
+    #region Отправка сообщения
 
     public async IAsyncEnumerable<StreamToken> SendMessageStream(
         ChatSession chatSession,
@@ -265,16 +292,33 @@ public class DeepSeekClient
         catch (JsonException) { }
     }
 
+    #endregion
+
     private async Task<string> PostAsync(string endpoint, object body)
     {
-        var req = CreateRequest(HttpMethod.Post, BaseUrl + endpoint, body);
+        var request = CreateRequest(HttpMethod.Post, BaseUrl + endpoint, body);
 
-        var res = await _httpClient.SendAsync(req);
-        var text = await res.Content.ReadAsStringAsync();
+        var response = await _httpClient.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
 
-        if (!res.IsSuccessStatusCode)
+        if (!response.IsSuccessStatusCode)
         {
-            throw new APIError(text, (int)res.StatusCode);
+            throw new APIError(text, (int)response.StatusCode);
+        }
+
+        return text;
+    }
+
+    private async Task<string> GetAsync(string endpoint, object body)
+    {
+        var request = CreateRequest(HttpMethod.Get, BaseUrl + endpoint, body);
+
+        var response = await _httpClient.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new APIError(text, (int)response.StatusCode);
         }
 
         return text;
