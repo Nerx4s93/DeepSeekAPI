@@ -46,7 +46,7 @@ public class DeepSeekClient
 
     public async Task<UserProfile> GetUserProfileAsync()
     {
-        var response = await GetAsync("/users/current", null);
+        var response = await GetAsync("/users/current");
 
         var json = JsonDocument.Parse(response);
 
@@ -294,7 +294,7 @@ public class DeepSeekClient
 
     #endregion
 
-    private async Task<string> PostAsync(string endpoint, object? body)
+    private async Task<string> PostAsync(string endpoint, object? body = null)
     {
         var request = CreateRequest(HttpMethod.Post, BaseUrl + endpoint, body);
 
@@ -309,7 +309,7 @@ public class DeepSeekClient
         return text;
     }
 
-    private async Task<string> GetAsync(string endpoint, object? body)
+    private async Task<string> GetAsync(string endpoint, object? body = null)
     {
         var request = CreateRequest(HttpMethod.Get, BaseUrl + endpoint, body);
 
