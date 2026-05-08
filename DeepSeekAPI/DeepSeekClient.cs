@@ -68,6 +68,7 @@ public class DeepSeekClient
 
         return new UserProfile(id, email, mobileNumber);
     }
+
     public async Task<ChatSession> CreateChatSessionAsync()
     {
         var response = await PostAsync("/chat_session/create", new { character_id = (string?)null });
