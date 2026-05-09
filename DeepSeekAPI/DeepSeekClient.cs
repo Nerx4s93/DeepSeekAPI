@@ -22,7 +22,9 @@ public class DeepSeekClient
     private readonly HttpClient _httpClient;
     private readonly DeepSeekChunkParser _chunkParser;
 
-    public DeepSeekClient(string authToken)
+    public DeepSeekClient(string authToken) : this(authToken, new HttpClient()) { }
+
+    public DeepSeekClient(string authToken, HttpClient httpClient)
     {
         if (string.IsNullOrWhiteSpace(authToken))
         {
@@ -39,7 +41,7 @@ public class DeepSeekClient
         }
 
         _deepSeekPow = new DeepSeekPOW(bytes);
-        _httpClient = new HttpClient();
+        _httpClient = httpClient;
         _chunkParser = new DeepSeekChunkParser();
     }
 
@@ -76,7 +78,6 @@ public class DeepSeekClient
             .Build();
 
         var endpoint = $"/chat_session/fetch_page{query}";
-        Console.WriteLine(endpoint);
         var response = await GetAsync(endpoint);
 
         using var json = JsonDocument.Parse(response);
@@ -233,7 +234,8 @@ public class DeepSeekClient
         ChatSettings chatSettings,
         long? parentMessageId = null)
     {
-        var pow = _deepSeekPow.SolveChallenge(GetPowChallenge("/api/v0/chat/completion"));
+        var powChallenge = await GetPowChallenge("/api/v0/chat/completion");
+        var pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         var body = new
         {
@@ -331,24 +333,37 @@ public class DeepSeekClient
 
     #endregion
 
+    private async Task<PowRequest> GetPowChallenge(string targetpath)
+    {
+        var request = new
+        {
+            target_path = targetpath
+        };
+
+        var response = await PostAsync("/chat/create_pow_challenge", request);
+
+        var json = JsonDocument.Parse(response);
+        var challenge = json.RootElement
+            .GetProperty("data")
+            .GetProperty("biz_data")
+            .GetProperty("challenge");
+
+        return JsonSerializer.Deserialize<PowRequest>(challenge.GetRawText())!;
+    }
+
     private async Task<string> PostAsync(string endpoint, object? body = null)
     {
-        var request = CreateRequest(HttpMethod.Post, BaseUrl + endpoint, body);
-
-        var response = await _httpClient.SendAsync(request);
-        var text = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new APIError(text, (int)response.StatusCode);
-        }
-
-        return text;
+        return await SendAsync(HttpMethod.Post, endpoint, body);
     }
 
     private async Task<string> GetAsync(string endpoint, object? body = null)
     {
-        var request = CreateRequest(HttpMethod.Get, BaseUrl + endpoint, body);
+        return await SendAsync(HttpMethod.Get, endpoint, body);
+    }
+
+    private async Task<string> SendAsync(HttpMethod httpMethod, string endpoint, object? body = null)
+    {
+        var request = CreateRequest(httpMethod, BaseUrl + endpoint, body);
 
         var response = await _httpClient.SendAsync(request);
         var text = await response.Content.ReadAsStringAsync();
@@ -387,23 +402,5 @@ public class DeepSeekClient
         }
 
         return req;
-    }
-
-    private PowRequest GetPowChallenge(string targetpath)
-    {
-        var request = new
-        {
-            target_path = targetpath
-        };
-
-        var response = PostAsync("/chat/create_pow_challenge", request).GetAwaiter().GetResult();
-
-        var json = JsonDocument.Parse(response);
-        var challenge = json.RootElement
-            .GetProperty("data")
-            .GetProperty("biz_data")
-            .GetProperty("challenge");
-
-        return JsonSerializer.Deserialize<PowRequest>(challenge.GetRawText())!;
     }
 }
