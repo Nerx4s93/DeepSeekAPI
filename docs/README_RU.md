@@ -27,10 +27,18 @@ dotnet add package DeepSeekAPI --version 1.3.0
 
 ## Быстрый старт
 ```csharp
-using DeepSeekAPI;
-using DeepSeekAPI.Models.Chat;
+var client = new DeepSeekClient("YOUR_USER_TOKEN");
 
-var client = new DeepSeekClient("YOUR_TOKEN");
+// получить информацию о пользователе
+var profile = await client.GetUserProfileAsync();
+Console.WriteLine($"{profile.Id} {profile.Email} {profile.MobileNumber}");
+
+// получить чат-сессии
+var chats = await client.GetChatSessionsAsync();
+foreach (var chat in chats)
+{
+    Console.WriteLine($"{chat.Id} {chat.Title} {chat.TitleType} {chat.Pinned} {chat.ModelType} {chat.UpdatedAt}");
+}
 
 // создать чат
 ChatSession chat = await client.CreateChatSession();

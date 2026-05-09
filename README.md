@@ -27,10 +27,18 @@ The token provides full access to your account
 
 ## Quick Start
 ```csharp
-using DeepSeekAPI;
-using DeepSeekAPI.Models.Chat;
+var client = new DeepSeekClient("YOUR_USER_TOKEN");
 
-var client = new DeepSeekClient("YOUR_TOKEN");
+// get user data
+var profile = await client.GetUserProfileAsync();
+Console.WriteLine($"{profile.Id} {profile.Email} {profile.MobileNumber}");
+
+// get chat sessions
+var chats = await client.GetChatSessionsAsync();
+foreach (var chat in chats)
+{
+    Console.WriteLine($"{chat.Id} {chat.Title} {chat.TitleType} {chat.Pinned} {chat.ModelType} {chat.UpdatedAt}");
+}
 
 // create chat
 ChatSession chat = await client.CreateChatSession();
