@@ -1,3 +1,6 @@
+## 1.3.1
+- Added support for recognition mode (`ModelType.Vision`) via `ChatSettings`
+
 ## 1.3.0
 - Added a method for retrieving user information
 - Added a method for retrieving a list of chat sessions

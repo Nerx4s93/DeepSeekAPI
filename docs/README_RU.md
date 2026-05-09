@@ -9,7 +9,7 @@
 
 ## Установка
 ``` bash
-dotnet add package DeepSeekAPI --version 1.3.0
+dotnet add package DeepSeekAPI --version 1.3.1
 ```
 
 ## Аутентификация
@@ -79,7 +79,7 @@ ChatCompletion(
 
 class ChatSettings
 {
-    ModelType ModelType;   // Default / Expert
+    ModelType ModelType;   // Default / Expert / Vision
     bool Thinking;
     bool Search;
 }
