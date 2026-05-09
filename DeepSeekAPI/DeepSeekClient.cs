@@ -241,7 +241,7 @@ public class DeepSeekClient
         {
             chat_session_id = chatSession.Id,
             parent_message_id = parentMessageId,
-            model_type = chatSettings.ModelType == ModelType.Default ? null : "expert",
+            model_type = chatSettings.ModelType.ToString().ToLower(),
             prompt,
             ref_file_ids = new string[0],
             thinking_enabled = chatSettings.Thinking,

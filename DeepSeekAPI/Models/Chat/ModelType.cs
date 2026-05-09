@@ -3,5 +3,6 @@
 public enum ModelType
 {
     Default,
-    Expert
+    Expert,
+    Vision
 }
