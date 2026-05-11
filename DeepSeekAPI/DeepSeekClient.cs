@@ -125,6 +125,26 @@ public class DeepSeekClient
 
     #region Отправка сообщения
 
+    public async Task<string> SendMessageAsync(
+        ChatSession chatSession,
+        string prompt,
+        ChatSettings chatSettings,
+        long? parentMessageId = null)
+    {
+        var response = new StringBuilder();
+
+        await foreach (var token in SendMessageStream(
+            chatSession,
+            prompt,
+            chatSettings,
+            parentMessageId))
+        {
+            response.Append(token.Text);
+        }
+
+        return response.ToString();
+    }
+
     public async IAsyncEnumerable<StreamToken> SendMessageStream(
         ChatSession chatSession,
         string prompt,
