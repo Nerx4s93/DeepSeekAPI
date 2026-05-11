@@ -22,6 +22,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="APIEngine" Version="1.0.1" />
 		<PackageReference Include="Wasmtime" Version="34.0.2" />
 	</ItemGroup>
 
@@ -33,9 +34,5 @@
 
 	<ItemGroup>
 		<None Include="icon.png" Pack="true" PackagePath="\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\APIEngine\APIEngine\APIEngine.csproj" />
 	</ItemGroup>
 </Project>

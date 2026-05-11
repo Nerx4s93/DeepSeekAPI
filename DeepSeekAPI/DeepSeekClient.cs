@@ -402,21 +402,4 @@ public class DeepSeekClient : HttpApiClient
 
         return Task.CompletedTask;
     }
-
-    private static string GetMimeType(string fileName)
-    {
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
-
-        return ext switch
-        {
-            ".txt" => "text/plain",
-            ".json" => "application/json",
-            ".pdf" => "application/pdf",
-            ".png" => "image/png",
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".webp" => "image/webp",
-            ".csv" => "text/csv",
-            _ => "application/octet-stream"
-        };
-    }
 }
