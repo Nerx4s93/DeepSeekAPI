@@ -50,21 +50,9 @@ public class DeepSeekClient : HttpApiClient
 
         using var json = JsonDocument.Parse(response);
 
-        var id = json.RootElement
-            .GetProperty("data")
-            .GetProperty("biz_data")
-            .GetProperty("id")
-            .GetString()!;
-        var email = json.RootElement
-            .GetProperty("data")
-            .GetProperty("biz_data")
-            .GetProperty("email")
-            .GetString()!;
-        var mobileNumber = json.RootElement
-            .GetProperty("data")
-            .GetProperty("biz_data")
-            .GetProperty("mobile_number")
-            .GetString()!;
+        var id = json.RootElement.GetByPathOrThrow("data.biz_data.id").GetString()!;
+        var email = json.RootElement.GetProperty("data.biz_data.email").GetString()!;
+        var mobileNumber = json.RootElement.GetProperty("data.biz_data.mobile_number").GetString()!;
 
         return new UserProfile(id, email, mobileNumber);
     }
@@ -113,10 +101,7 @@ public class DeepSeekClient : HttpApiClient
         using var json = JsonDocument.Parse(response);
 
         var id = json.RootElement
-            .GetProperty("data")
-            .GetProperty("biz_data")
-            .GetProperty("chat_session")
-            .GetProperty("id")
+            .GetByPathOrThrow("data.biz_data.chat_session.id")
             .GetString()!;
 
         return new ChatSession(id);
