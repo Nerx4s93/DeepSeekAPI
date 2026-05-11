@@ -1,4 +1,5 @@
-﻿using DeepSeekAPI.Exceptions;
+﻿using APIEngine;
+using DeepSeekAPI.Exceptions;
 using DeepSeekAPI.Models;
 using DeepSeekAPI.Models.Chat;
 using DeepSeekAPI.PoW;
@@ -13,27 +14,26 @@ using System.Threading.Tasks;
 
 namespace DeepSeekAPI;
 
-public class DeepSeekClient
+public class DeepSeekClient : HttpApiClient
 {
-    private const string BaseUrl = "https://chat.deepseek.com/api/v0";
-
     private readonly string _authToken;
     private readonly DeepSeekPOW _deepSeekPow;
-    private readonly HttpClient _httpClient;
     private readonly DeepSeekChunkParser _chunkParser;
 
-    public DeepSeekClient(string authToken) : this(authToken, new HttpClient()) { }
+    private string? _pow;
 
     public DeepSeekClient(string authToken, HttpClient httpClient)
+    : base(httpClient, "https://chat.deepseek.com/api/v0")
     {
+        _authToken = authToken;
+
         if (string.IsNullOrWhiteSpace(authToken))
         {
             throw new AuthenticationError("Invalid auth token");
         }
 
-        _authToken = authToken;
-
-        var bytes = ResourcesDataLoader.GetDataBytes("wasm.sha3_wasm_bg.7b9ca65ddd.wasm");
+        var bytes = ResourcesDataLoader.GetDataBytes(
+            "wasm.sha3_wasm_bg.7b9ca65ddd.wasm");
 
         if (bytes == null)
         {
@@ -41,7 +41,6 @@ public class DeepSeekClient
         }
 
         _deepSeekPow = new DeepSeekPOW(bytes);
-        _httpClient = httpClient;
         _chunkParser = new DeepSeekChunkParser();
     }
 
@@ -255,7 +254,7 @@ public class DeepSeekClient
         long? parentMessageId = null)
     {
         var powChallenge = await GetPowChallenge("/api/v0/chat/completion");
-        var pow = _deepSeekPow.SolveChallenge(powChallenge);
+        _pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         var body = new
         {
@@ -268,13 +267,7 @@ public class DeepSeekClient
             search_enabled = chatSettings.Search
         };
 
-        var request = CreateRequest(HttpMethod.Post, BaseUrl + "/chat/completion", body, pow);
-        var result = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-
-        if (!result.IsSuccessStatusCode)
-        {
-            throw new APIError("Request failed", (int)result.StatusCode);
-        }
+        var result = await PostRawAsync("/chat/completion", body);
 
         using var stream = await result.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(stream);
@@ -340,13 +333,11 @@ public class DeepSeekClient
                 ? reasonProp.GetString()
                 : null;
 
-            switch (reason)
+            throw reason switch
             {
-                case "rate_limit_reached":
-                    throw new RateLimitError(content ?? "");
-                default:
-                    throw new APIError(content ?? "Unknown API error", 0);
-            }
+                "rate_limit_reached" => new RateLimitError(content ?? ""),
+                _ => new APIError(content ?? "Unknown API error", 0),
+            };
         }
         catch (JsonException) { }
     }
@@ -371,50 +362,18 @@ public class DeepSeekClient
         return JsonSerializer.Deserialize<PowRequest>(challenge.GetRawText())!;
     }
 
-    private async Task<string> PostAsync(string endpoint, object? body = null)
+    protected override Task ConfigureRequestAsync(HttpRequestMessage request)
     {
-        return await SendAsync(HttpMethod.Post, endpoint, body);
-    }
-
-    private async Task<string> GetAsync(string endpoint, object? body = null)
-    {
-        return await SendAsync(HttpMethod.Get, endpoint, body);
-    }
-
-    private async Task<string> SendAsync(HttpMethod httpMethod, string endpoint, object? body = null)
-    {
-        var request = CreateRequest(httpMethod, BaseUrl + endpoint, body);
-
-        var response = await _httpClient.SendAsync(request);
-        var text = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new APIError(text, (int)response.StatusCode);
-        }
-
-        return text;
-    }
-
-    private HttpRequestMessage CreateRequest(HttpMethod method, string url, object? body = null, string? pow = null)
-    {
-        var request = new HttpRequestMessage(method, url);
-
         request.Headers.Add("authorization", $"{_authToken}");
         request.Headers.Add("x-client-platform", "web");
         request.Headers.Add("x-client-version", "2.0.0");
 
-        if (pow != null)
+        if (_pow != null)
         {
-            request.Headers.Add("x-ds-pow-response", pow);
+            request.Headers.Add("x-ds-pow-response", _pow);
+            _pow = null;
         }
 
-        if (body != null)
-        {
-            var json = JsonSerializer.Serialize(body);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-        }
-
-        return request;
+        return Task.CompletedTask;
     }
 }
