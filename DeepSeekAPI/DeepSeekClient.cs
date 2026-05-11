@@ -145,7 +145,7 @@ public class DeepSeekClient : HttpApiClient
         }
 
         using var json = JsonDocument.Parse(text);
-        var id = json.RootElement.GetProperty("data.biz_data.id").GetString()!;
+        var id = json.RootElement.GetByPathOrThrow("data.biz_data.id").GetString()!;
 
         return id;
     }
