@@ -378,29 +378,23 @@ public class DeepSeekClient
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string url, object? body = null, string? pow = null)
     {
-        var req = new HttpRequestMessage(method, url);
+        var request = new HttpRequestMessage(method, url);
 
-        req.Headers.Add("accept", "*/*");
-        req.Headers.Add("authorization", $"Bearer {_authToken}");
-        req.Headers.Add("origin", "https://chat.deepseek.com");
-        req.Headers.Add("referer", "https://chat.deepseek.com/");
-        req.Headers.Add("user-agent", "Mozilla/5.0");
-        req.Headers.Add("x-app-version", "20241129.1");
-        req.Headers.Add("x-client-locale", "en_US");
-        req.Headers.Add("x-client-platform", "web");
-        req.Headers.Add("x-client-version", "2.0.0");
+        request.Headers.Add("authorization", $"{_authToken}");
+        request.Headers.Add("x-client-platform", "web");
+        request.Headers.Add("x-client-version", "2.0.0");
 
         if (pow != null)
         {
-            req.Headers.Add("x-ds-pow-response", pow);
+            request.Headers.Add("x-ds-pow-response", pow);
         }
 
         if (body != null)
         {
             var json = JsonSerializer.Serialize(body);
-            req.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        return req;
+        return request;
     }
 }
