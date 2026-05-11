@@ -1,4 +1,5 @@
 ﻿using APIEngine;
+using APIEngine.Exceptions;
 using DeepSeekAPI.Exceptions;
 using DeepSeekAPI.Models;
 using DeepSeekAPI.Models.Chat;
@@ -8,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -33,12 +33,8 @@ public class DeepSeekClient : HttpApiClient
         }
 
         var bytes = ResourcesDataLoader.GetDataBytes(
-            "wasm.sha3_wasm_bg.7b9ca65ddd.wasm");
-
-        if (bytes == null)
-        {
-            throw new InvalidOperationException("Failed to load WASM module");
-        }
+            "wasm.sha3_wasm_bg.7b9ca65ddd.wasm")
+            ?? throw new InvalidOperationException("Failed to load WASM module");
 
         _deepSeekPow = new DeepSeekPOW(bytes);
         _chunkParser = new DeepSeekChunkParser();
