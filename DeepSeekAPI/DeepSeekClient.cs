@@ -9,8 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace DeepSeekAPI;
@@ -102,6 +104,50 @@ public class DeepSeekClient : HttpApiClient
             .GetString()!;
 
         return new ChatSession(id);
+    }
+
+    public async Task<string> UploadFileAsync(
+        string filePath,
+        CancellationToken cancellationToken = default)
+    {
+        var powChallenge = await GetPowChallenge("/api/v0/file/upload_file");
+        _pow = _deepSeekPow.SolveChallenge(powChallenge);
+
+        using var request = CreateRequest(HttpMethod.Post, "file/upload_file");
+
+        var fileInfo = new FileInfo(filePath);
+        var fileName = fileInfo.Name;
+        var stream = File.OpenRead(filePath);
+        var fileContent = new StreamContent(stream);
+
+        var content = new MultipartFormDataContent();
+        var encodedFileName = Uri.EscapeDataString(fileName);
+
+        var contentDisposition = new ContentDispositionHeaderValue("form-data")
+        {
+            Name = encodedFileName,
+            FileName = encodedFileName
+        };
+        fileContent.Headers.ContentDisposition = contentDisposition;
+
+        content.Add(fileContent);
+
+        request.Content = content;
+
+        await ConfigureRequestAsync(request);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        var text = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new APIError(text, (int)response.StatusCode);
+        }
+
+        using var json = JsonDocument.Parse(text);
+        var id = json.RootElement.GetProperty("data.biz_data.id").GetString()!;
+
+        return id;
     }
 
     #region Отправка сообщения
@@ -357,5 +403,22 @@ public class DeepSeekClient : HttpApiClient
         }
 
         return Task.CompletedTask;
+    }
+
+    private static string GetMimeType(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+
+        return ext switch
+        {
+            ".txt" => "text/plain",
+            ".json" => "application/json",
+            ".pdf" => "application/pdf",
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".webp" => "image/webp",
+            ".csv" => "text/csv",
+            _ => "application/octet-stream"
+        };
     }
 }
