@@ -114,6 +114,7 @@ public class DeepSeekClient : HttpApiClient
         _pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         using var request = CreateRequest(HttpMethod.Post, "file/upload_file");
+        await ConfigureRequestAsync(request);
 
         var fileInfo = new FileInfo(filePath);
         var fileName = fileInfo.Name;
@@ -121,8 +122,8 @@ public class DeepSeekClient : HttpApiClient
         var fileContent = new StreamContent(stream);
 
         var content = new MultipartFormDataContent();
-        var encodedFileName = Uri.EscapeDataString(fileName);
 
+        var encodedFileName = Uri.EscapeDataString(fileName);
         var contentDisposition = new ContentDispositionHeaderValue("form-data")
         {
             Name = encodedFileName,
@@ -131,10 +132,7 @@ public class DeepSeekClient : HttpApiClient
         fileContent.Headers.ContentDisposition = contentDisposition;
 
         content.Add(fileContent);
-
         request.Content = content;
-
-        await ConfigureRequestAsync(request);
 
         var response = await _httpClient.SendAsync(request, cancellationToken);
         var text = await response.Content.ReadAsStringAsync(cancellationToken);
