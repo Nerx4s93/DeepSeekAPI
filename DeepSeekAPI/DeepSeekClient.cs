@@ -154,7 +154,8 @@ public class DeepSeekClient : HttpApiClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        long? parentMessageId = null)
+        long? parentMessageId = null,
+        List<string>? refFileIds = null)
     {
         var response = new StringBuilder();
 
@@ -162,7 +163,8 @@ public class DeepSeekClient : HttpApiClient
             chatSession,
             prompt,
             chatSettings,
-            parentMessageId))
+            parentMessageId,
+            refFileIds))
         {
             response.Append(token.Text);
         }
@@ -174,7 +176,8 @@ public class DeepSeekClient : HttpApiClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        long? parentMessageId = null)
+        long? parentMessageId = null,
+        List<string>? refFileIds = null)
     {
         var messageId = 0L;
         var thinkingAnswerStart = false;
@@ -184,7 +187,8 @@ public class DeepSeekClient : HttpApiClient
             chatSession,
             prompt,
             chatSettings,
-            parentMessageId))
+            parentMessageId,
+            refFileIds))
         {
             if (chunk is MessageInitEvent messageInitEvent)
             {
@@ -257,7 +261,8 @@ public class DeepSeekClient : HttpApiClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        long? parentMessageId = null)
+        long? parentMessageId = null,
+        List<string>? refFileIds = null)
     {
         var chunks = new List<DeepSeekEvent>();
 
@@ -265,7 +270,8 @@ public class DeepSeekClient : HttpApiClient
             chatSession,
             prompt,
             chatSettings,
-            parentMessageId))
+            parentMessageId,
+            refFileIds))
         {
             chunks.Add(chunk);
         }
@@ -277,8 +283,11 @@ public class DeepSeekClient : HttpApiClient
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
-        long? parentMessageId = null)
+        long? parentMessageId = null,
+        List<string>? refFileIds = null)
     {
+        refFileIds ??= [];
+
         var powChallenge = await GetPowChallenge("/api/v0/chat/completion");
         _pow = _deepSeekPow.SolveChallenge(powChallenge);
 
@@ -288,7 +297,7 @@ public class DeepSeekClient : HttpApiClient
             parent_message_id = parentMessageId,
             model_type = chatSettings.ModelType.ToString().ToLower(),
             prompt,
-            ref_file_ids = new string[0],
+            ref_file_ids = refFileIds,
             thinking_enabled = chatSettings.Thinking,
             search_enabled = chatSettings.Search
         };
