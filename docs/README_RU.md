@@ -9,7 +9,7 @@
 
 ## Установка
 ``` bash
-dotnet add package DeepSeekAPI --version 1.3.1
+dotnet add package DeepSeekAPI --version 1.4.0
 ```
 
 ## Аутентификация
@@ -63,19 +63,21 @@ await foreach (var token in client.SendMessageStream(
 
 ## Конфигурация запроса
 ``` C#
-SendMessageStream(
+SendMessageAsync(
     ChatSession chatSession,
     string prompt,
     ChatSettings chatSettings,
-    string? parentMessageId = null
-)
+    long? parentMessageId = null,
+    List<string>? refFileIds = null,
+    CancellationToken cancellationToken = default)
 
-ChatCompletion(
+public async IAsyncEnumerable<DeepSeekEvent> ChatCompletion(
     ChatSession chatSession,
     string prompt,
     ChatSettings chatSettings,
-    string? parentMessageId = null
-)
+    long? parentMessageId = null,
+    List<string>? refFileIds = null,
+    CancellationToken cancellationToken = default)
 
 class ChatSettings
 {

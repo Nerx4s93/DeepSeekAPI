@@ -1,3 +1,11 @@
+## 1.4.0
+- Added the SendMessageAsync method with stream response support
+- Added CancellationToken support in all public client methods
+- Added HTTP Proxy support
+- Moved HTTP handling to a separate APIEngine project
+- Reworked the client architecture and separated responsibilities between the API layer and the HTTP layer
+- Removed unnecessary and duplicate HTTP headers in requests
+
 ## 1.3.1
 - Added support for recognition mode (`ModelType.Vision`) via `ChatSettings`
 

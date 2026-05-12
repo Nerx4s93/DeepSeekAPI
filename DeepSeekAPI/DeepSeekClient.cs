@@ -24,8 +24,6 @@ public class DeepSeekClient : HttpApiClient
     private readonly DeepSeekPOW _deepSeekPow;
     private readonly DeepSeekChunkParser _chunkParser;
 
-    private string? _pow;
-
     public DeepSeekClient(string authToken) : base("https://chat.deepseek.com/api/v0", null)
     {
         _authToken = authToken;
@@ -45,7 +43,7 @@ public class DeepSeekClient : HttpApiClient
 
     public async Task<UserProfile> GetUserProfileAsync(CancellationToken cancellationToken = default)
     {
-        var response = await GetAsync("/users/current", cancellationToken);
+        var response = await GetAsync("/users/current", cancellationToken: cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -66,7 +64,7 @@ public class DeepSeekClient : HttpApiClient
             .Build();
 
         var endpoint = $"/chat_session/fetch_page{query}";
-        var response = await GetAsync(endpoint, cancellationToken);
+        var response = await GetAsync(endpoint, cancellationToken: cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -100,7 +98,7 @@ public class DeepSeekClient : HttpApiClient
         var response = await PostAsync(
             "/chat_session/create",
             new { character_id = (string?)null },
-            cancellationToken);
+            cancellationToken: cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -116,10 +114,11 @@ public class DeepSeekClient : HttpApiClient
         CancellationToken cancellationToken = default)
     {
         var powChallenge = await GetPowChallenge("/api/v0/file/upload_file", cancellationToken);
-        _pow = _deepSeekPow.SolveChallenge(powChallenge);
+        var pow = _deepSeekPow.SolveChallenge(powChallenge);
 
-        using var request = CreateRequest(HttpMethod.Post, "file/upload_file", cancellationToken);
+        using var request = CreateRequest(HttpMethod.Post, "file/upload_file");
         await ConfigureRequestAsync(request);
+        request.Headers.Add("x-ds-pow-response", pow);
 
         var fileInfo = new FileInfo(filePath);
         var fileName = fileInfo.Name;
@@ -301,7 +300,7 @@ public class DeepSeekClient : HttpApiClient
         refFileIds ??= [];
 
         var powChallenge = await GetPowChallenge("/api/v0/chat/completion", cancellationToken);
-        _pow = _deepSeekPow.SolveChallenge(powChallenge);
+        var pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         var body = new
         {
@@ -314,9 +313,13 @@ public class DeepSeekClient : HttpApiClient
             search_enabled = chatSettings.Search
         };
 
-        var result = await PostRawAsync("/chat/completion", body, cancellationToken);
+        var result = await PostRawAsync(
+            "/chat/completion",
+            body,
+            request => request.Headers.Add("x-ds-pow-response", pow),
+            cancellationToken);
 
-        using var stream = await result.Content.ReadAsStreamAsync();
+        using var stream = await result.Content.ReadAsStreamAsync(cancellationToken);
         using var reader = new StreamReader(stream);
 
         while (true)
@@ -400,7 +403,10 @@ public class DeepSeekClient : HttpApiClient
             target_path = targetpath
         };
 
-        var response = await PostAsync("/chat/create_pow_challenge", request, cancellationToken);
+        var response = await PostAsync(
+            "/chat/create_pow_challenge",
+            request,
+            cancellationToken: cancellationToken);
 
         var json = JsonDocument.Parse(response);
         var challenge = json.RootElement
@@ -416,12 +422,6 @@ public class DeepSeekClient : HttpApiClient
         request.Headers.Add("authorization", $"{_authToken}");
         request.Headers.Add("x-client-platform", "web");
         request.Headers.Add("x-client-version", "2.0.0");
-
-        if (_pow != null)
-        {
-            request.Headers.Add("x-ds-pow-response", _pow);
-            _pow = null;
-        }
 
         return Task.CompletedTask;
     }
