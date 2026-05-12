@@ -25,8 +25,7 @@ public class DeepSeekClient : HttpApiClient
 
     private string? _pow;
 
-    public DeepSeekClient(string authToken, HttpClient httpClient)
-    : base(httpClient, "https://chat.deepseek.com/api/v0")
+    public DeepSeekClient(string authToken) : base("https://chat.deepseek.com/api/v0", null)
     {
         _authToken = authToken;
 
