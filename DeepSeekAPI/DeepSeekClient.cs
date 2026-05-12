@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -42,9 +43,9 @@ public class DeepSeekClient : HttpApiClient
         _chunkParser = new DeepSeekChunkParser();
     }
 
-    public async Task<UserProfile> GetUserProfileAsync()
+    public async Task<UserProfile> GetUserProfileAsync(CancellationToken cancellationToken = default)
     {
-        var response = await GetAsync("/users/current");
+        var response = await GetAsync("/users/current", cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -55,7 +56,9 @@ public class DeepSeekClient : HttpApiClient
         return new UserProfile(id, email, mobileNumber);
     }
 
-    public async Task<List<ChatSession>> GetChatSessionsAsync(double? updateAt = null)
+    public async Task<List<ChatSession>> GetChatSessionsAsync(
+        double? updateAt = null,
+        CancellationToken cancellationToken = default)
     {
         var query = QueryParametersBuilder.Create()
             .AddParameter("lte_cursor.pinned", false)
@@ -63,7 +66,7 @@ public class DeepSeekClient : HttpApiClient
             .Build();
 
         var endpoint = $"/chat_session/fetch_page{query}";
-        var response = await GetAsync(endpoint);
+        var response = await GetAsync(endpoint, cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -92,9 +95,12 @@ public class DeepSeekClient : HttpApiClient
         return result;
     }
 
-    public async Task<ChatSession> CreateChatSessionAsync()
+    public async Task<ChatSession> CreateChatSessionAsync(CancellationToken cancellationToken = default)
     {
-        var response = await PostAsync("/chat_session/create", new { character_id = (string?)null });
+        var response = await PostAsync(
+            "/chat_session/create",
+            new { character_id = (string?)null },
+            cancellationToken);
 
         using var json = JsonDocument.Parse(response);
 
@@ -109,10 +115,10 @@ public class DeepSeekClient : HttpApiClient
         string filePath,
         CancellationToken cancellationToken = default)
     {
-        var powChallenge = await GetPowChallenge("/api/v0/file/upload_file");
+        var powChallenge = await GetPowChallenge("/api/v0/file/upload_file", cancellationToken);
         _pow = _deepSeekPow.SolveChallenge(powChallenge);
 
-        using var request = CreateRequest(HttpMethod.Post, "file/upload_file");
+        using var request = CreateRequest(HttpMethod.Post, "file/upload_file", cancellationToken);
         await ConfigureRequestAsync(request);
 
         var fileInfo = new FileInfo(filePath);
@@ -154,7 +160,8 @@ public class DeepSeekClient : HttpApiClient
         string prompt,
         ChatSettings chatSettings,
         long? parentMessageId = null,
-        List<string>? refFileIds = null)
+        List<string>? refFileIds = null,
+        CancellationToken cancellationToken = default)
     {
         var response = new StringBuilder();
 
@@ -163,7 +170,8 @@ public class DeepSeekClient : HttpApiClient
             prompt,
             chatSettings,
             parentMessageId,
-            refFileIds))
+            refFileIds,
+            cancellationToken))
         {
             response.Append(token.Text);
         }
@@ -176,7 +184,8 @@ public class DeepSeekClient : HttpApiClient
         string prompt,
         ChatSettings chatSettings,
         long? parentMessageId = null,
-        List<string>? refFileIds = null)
+        List<string>? refFileIds = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var messageId = 0L;
         var thinkingAnswerStart = false;
@@ -187,7 +196,8 @@ public class DeepSeekClient : HttpApiClient
             prompt,
             chatSettings,
             parentMessageId,
-            refFileIds))
+            refFileIds,
+            cancellationToken))
         {
             if (chunk is MessageInitEvent messageInitEvent)
             {
@@ -261,7 +271,8 @@ public class DeepSeekClient : HttpApiClient
         string prompt,
         ChatSettings chatSettings,
         long? parentMessageId = null,
-        List<string>? refFileIds = null)
+        List<string>? refFileIds = null,
+        CancellationToken cancellationToken = default)
     {
         var chunks = new List<DeepSeekEvent>();
 
@@ -270,7 +281,8 @@ public class DeepSeekClient : HttpApiClient
             prompt,
             chatSettings,
             parentMessageId,
-            refFileIds))
+            refFileIds,
+            cancellationToken))
         {
             chunks.Add(chunk);
         }
@@ -283,11 +295,12 @@ public class DeepSeekClient : HttpApiClient
         string prompt,
         ChatSettings chatSettings,
         long? parentMessageId = null,
-        List<string>? refFileIds = null)
+        List<string>? refFileIds = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         refFileIds ??= [];
 
-        var powChallenge = await GetPowChallenge("/api/v0/chat/completion");
+        var powChallenge = await GetPowChallenge("/api/v0/chat/completion", cancellationToken);
         _pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         var body = new
@@ -301,14 +314,14 @@ public class DeepSeekClient : HttpApiClient
             search_enabled = chatSettings.Search
         };
 
-        var result = await PostRawAsync("/chat/completion", body);
+        var result = await PostRawAsync("/chat/completion", body, cancellationToken);
 
         using var stream = await result.Content.ReadAsStreamAsync();
         using var reader = new StreamReader(stream);
 
         while (true)
         {
-            var line = await reader.ReadLineAsync();
+            var line = await reader.ReadLineAsync(cancellationToken);
 
             if (line is null)
             {
@@ -378,14 +391,16 @@ public class DeepSeekClient : HttpApiClient
 
     #endregion
 
-    private async Task<PowRequest> GetPowChallenge(string targetpath)
+    private async Task<PowRequest> GetPowChallenge(
+        string targetpath,
+        CancellationToken cancellationToken = default)
     {
         var request = new
         {
             target_path = targetpath
         };
 
-        var response = await PostAsync("/chat/create_pow_challenge", request);
+        var response = await PostAsync("/chat/create_pow_challenge", request, cancellationToken);
 
         var json = JsonDocument.Parse(response);
         var challenge = json.RootElement
