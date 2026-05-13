@@ -2,7 +2,7 @@
 
 # Documentation
 
-The DeepSeekAPI project is built on top of APIEngine.
+The DeepSeekAPI project is built on top of [APIEngine](https://github.com/Nerx4s93/APIEngine).
 
 The basic HTTP request implementation is entirely delegated to APIEngine, including:
 - sending requests
