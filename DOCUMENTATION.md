@@ -1,4 +1,4 @@
-### [-----EN-----] [[-----RU-----]](DOCUMENTATION_RU.md)
+### [-----EN-----] [[-----RU-----]](docs/DOCUMENTATION_RU.md)
 
 # Documentation
 
