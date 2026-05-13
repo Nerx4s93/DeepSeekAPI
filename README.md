@@ -6,6 +6,7 @@
 Suitable for automation, CLI tools, and custom clients.
 
 [Changelog](docs/CHANGELOG_EN.md)
+[Documentation](docs/DOCUMENTATION_EN.md)
 
 ## Installation
 ``` bash
