@@ -112,7 +112,7 @@ public async Task<string> SendMessageAsync(
 - `chatSettings` — настройки генерации
 - `parentMessageId` — для продолжения диалога
 - `refFileIds` — список файлов
-- `cancellationToken` — отмена
+- `cancellationToken` — токен отмены
 
 Возвращает:
 - `string` — полный ответ модели
