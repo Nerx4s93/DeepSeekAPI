@@ -62,41 +62,6 @@ await foreach (var token in client.SendMessageStream(
 }
 ```
 
-## Request Configuration
-``` C#
-SendMessageAsync(
-    ChatSession chatSession,
-    string prompt,
-    ChatSettings chatSettings,
-    long? parentMessageId = null,
-    List<string>? refFileIds = null,
-    CancellationToken cancellationToken = default)
-
-public async IAsyncEnumerable<DeepSeekEvent> ChatCompletion(
-    ChatSession chatSession,
-    string prompt,
-    ChatSettings chatSettings,
-    long? parentMessageId = null,
-    List<string>? refFileIds = null,
-    CancellationToken cancellationToken = default)
-
-class ChatSettings
-{
-    ModelType ModelType;   // Default / Expert / Vision
-    bool Thinking;
-    bool Search;
-}
-```
-
-## Event Model (Streaming API)
-The response is delivered as a stream of events:	
-- MessageInitEvent — message initialization (metadata + first chunk)
-- TextEvent — text stream
-- PatchEvent — partial updates (append / update)
-- SearchEvent — search queries and results
-- MetaEvent — service metadata
-- StatusEvent — generation state (WIP / FINISHED)
-
 ## Proof-of-Work (PoW)
 DeepSeek requires PoW for generating responses.
 The library automatically:
