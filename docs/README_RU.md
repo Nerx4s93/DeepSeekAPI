@@ -62,41 +62,6 @@ await foreach (var token in client.SendMessageStream(
 }
 ```
 
-## Конфигурация запроса
-``` C#
-SendMessageAsync(
-    ChatSession chatSession,
-    string prompt,
-    ChatSettings chatSettings,
-    long? parentMessageId = null,
-    List<string>? refFileIds = null,
-    CancellationToken cancellationToken = default)
-
-public async IAsyncEnumerable<DeepSeekEvent> ChatCompletion(
-    ChatSession chatSession,
-    string prompt,
-    ChatSettings chatSettings,
-    long? parentMessageId = null,
-    List<string>? refFileIds = null,
-    CancellationToken cancellationToken = default)
-
-class ChatSettings
-{
-    ModelType ModelType;   // Default / Expert / Vision
-    bool Thinking;
-    bool Search;
-}
-```
-
-## Модель событий (Streaming API)
-Ответ приходит как поток событий:
-- MessageInitEvent — инициализация сообщения (мета + первый фрагмент)
-- TextEvent — поток текста
-- PatchEvent — обновления фрагментов (append / update)
-- SearchEvent — поиск и результаты
-- MetaEvent — служебные данные
-- StatusEvent — состояние генерации (WIP / FINISHED)
-
 ## Proof-of-Work (PoW)
 DeepSeek требует PoW для генерации ответов.
 Библиотека автоматически:
