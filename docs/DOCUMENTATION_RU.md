@@ -1,3 +1,5 @@
+### [[-----EN-----]](DOCUMENTATION_EN.md) [-----RU-----]
+
 # Документация
 
 Проект DeepSeekAPI построен на базе APIEngine.
