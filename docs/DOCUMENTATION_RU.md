@@ -2,7 +2,7 @@
 
 # Документация
 
-Проект DeepSeekAPI построен на базе APIEngine.
+Проект DeepSeekAPI построен на базе [APIEngine](https://github.com/Nerx4s93/APIEngine).
 
 Базовая реализация HTTP-запросов полностью вынесена в APIEngine, включая:
 - отправку запросов
