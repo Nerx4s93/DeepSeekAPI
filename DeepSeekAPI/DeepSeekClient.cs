@@ -72,6 +72,35 @@ public class DeepSeekClient : HttpApiClient
         return new ChatSession(id);
     }
 
+    public async Task<bool> DeleteChatSessionAsync(
+        ChatSession chatSession, 
+        CancellationToken cancellationToken = default)
+    {
+        var body = new
+        {
+            chat_session_id = chatSession.Id
+        };
+
+        var response = await PostAsync(
+            "/chat_session/delete",
+            body,
+            cancellationToken: cancellationToken);
+
+        try
+        {
+            var json = JsonDocument.Parse(response);
+            var value = json.RootElement.GetByPathOrThrow("code").GetInt64();
+
+            return value == 0;
+        }
+        catch (Exception exception) when (
+            exception is JsonException ||
+            exception is InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     public async Task<List<ChatSession>> GetChatSessionsAsync(
         double? updateAt = null,
         CancellationToken cancellationToken = default)
