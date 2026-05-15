@@ -1,3 +1,7 @@
+## 1.4.1
+- Fixed an issue where initializing DeepSeekAPI with certain tokens caused errors  
+- Fixed a critical bug that could prevent messages from being sent 
+
 ## 1.4.0
 - Added the SendMessageAsync method with stream response support
 - Added CancellationToken support in all public client methods
