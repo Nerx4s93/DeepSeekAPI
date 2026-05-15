@@ -154,15 +154,15 @@ public class DeepSeekClient : HttpApiClient
 
     #region Отправка сообщения
 
-    public async Task StopGeneration(
+    public async Task<bool> StopGeneration(
         ChatSession chatSession,
         long messageId,
         CancellationToken cancellationToken = default)
     {
         var body = new
         {
-            chat_session_i = chatSession.Id,
-            message_i = messageId
+            chat_session_id = chatSession.Id,
+            message_id = messageId
         };
 
         var response = await PostAsync(
@@ -170,7 +170,19 @@ public class DeepSeekClient : HttpApiClient
             body,
             cancellationToken: cancellationToken);
 
-        Console.WriteLine(response);
+        try
+        {
+            var json = JsonDocument.Parse(response);
+            var value = json.RootElement.GetByPathOrThrow("code").GetInt64();
+
+            return value == 0;
+        }
+        catch (Exception exception) when (
+            exception is JsonException ||
+            exception is InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     public async Task<string> SendMessageAsync(
