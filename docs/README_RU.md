@@ -42,10 +42,10 @@ foreach (var chat in chats)
 }
 
 // создать чат
-ChatSession chat = await client.CreateChatSession();
+ChatSession chatSession = await client.CreateChatSession();
 
 // настройки запроса
-var settings = new ChatSettings
+var chatSettings = new ChatSettings
 {
     ModelType = ModelType.Expert,
     Thinking = true,
