@@ -26,7 +26,7 @@ public class DeepSeekClient : HttpApiClient
 
     public DeepSeekClient(string authToken) : base("https://chat.deepseek.com/api/v0", null)
     {
-        _authToken = authToken;
+        _authToken = "Bearer " + authToken;
 
         if (string.IsNullOrWhiteSpace(authToken))
         {
@@ -48,8 +48,8 @@ public class DeepSeekClient : HttpApiClient
         using var json = JsonDocument.Parse(response);
 
         var id = json.RootElement.GetByPathOrThrow("data.biz_data.id").GetString()!;
-        var email = json.RootElement.GetProperty("data.biz_data.email").GetString()!;
-        var mobileNumber = json.RootElement.GetProperty("data.biz_data.mobile_number").GetString()!;
+        var email = json.RootElement.GetByPathOrThrow("data.biz_data.email").GetString()!;
+        var mobileNumber = json.RootElement.GetByPathOrThrow("data.biz_data.mobile_number").GetString()!;
 
         return new UserProfile(id, email, mobileNumber);
     }
@@ -153,6 +153,25 @@ public class DeepSeekClient : HttpApiClient
     }
 
     #region Отправка сообщения
+
+    public async Task StopGeneration(
+        ChatSession chatSession,
+        long messageId,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new
+        {
+            chat_session_i = chatSession.Id,
+            message_i = messageId
+        };
+
+        var response = await PostAsync(
+            "/chat/stop_strea",
+            body,
+            cancellationToken: cancellationToken);
+
+        Console.WriteLine(response);
+    }
 
     public async Task<string> SendMessageAsync(
         ChatSession chatSession,
