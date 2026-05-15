@@ -451,7 +451,7 @@ public class DeepSeekClient : HttpApiClient
             throw reason switch
             {
                 "rate_limit_reached" => new RateLimitError(content ?? ""),
-                _ => new APIError(content ?? "Unknown API error", 0),
+                _ => new APIError($"{reason}: {content}", 0),
             };
         }
         catch (JsonException) { }
