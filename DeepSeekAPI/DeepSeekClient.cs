@@ -54,6 +54,24 @@ public class DeepSeekClient : HttpApiClient
         return new UserProfile(id, email, mobileNumber);
     }
 
+    #region Сессии
+
+    public async Task<ChatSession> CreateChatSessionAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await PostAsync(
+            "/chat_session/create",
+            new { character_id = (string?)null },
+            cancellationToken: cancellationToken);
+
+        using var json = JsonDocument.Parse(response);
+
+        var id = json.RootElement
+            .GetByPathOrThrow("data.biz_data.chat_session.id")
+            .GetString()!;
+
+        return new ChatSession(id);
+    }
+
     public async Task<List<ChatSession>> GetChatSessionsAsync(
         double? updateAt = null,
         CancellationToken cancellationToken = default)
@@ -93,25 +111,44 @@ public class DeepSeekClient : HttpApiClient
         return result;
     }
 
-    public async Task<ChatSession> CreateChatSessionAsync(CancellationToken cancellationToken = default)
+    #endregion
+
+    #region Отправка сообщения
+
+    public async Task<bool> StopGeneration(
+        ChatSession chatSession,
+        long messageId,
+        CancellationToken cancellationToken = default)
     {
+        var body = new
+        {
+            chat_session_id = chatSession.Id,
+            message_id = messageId
+        };
+
         var response = await PostAsync(
-            "/chat_session/create",
-            new { character_id = (string?)null },
+            "/chat/stop_stream",
+            body,
             cancellationToken: cancellationToken);
 
-        using var json = JsonDocument.Parse(response);
+        try
+        {
+            var json = JsonDocument.Parse(response);
+            var value = json.RootElement.GetByPathOrThrow("code").GetInt64();
 
-        var id = json.RootElement
-            .GetByPathOrThrow("data.biz_data.chat_session.id")
-            .GetString()!;
-
-        return new ChatSession(id);
+            return value == 0;
+        }
+        catch (Exception exception) when (
+            exception is JsonException ||
+            exception is InvalidOperationException)
+        {
+            return false;
+        }
     }
 
     public async Task<string> UploadFileAsync(
-        string filePath,
-        CancellationToken cancellationToken = default)
+    string filePath,
+    CancellationToken cancellationToken = default)
     {
         var powChallenge = await GetPowChallenge("/api/v0/file/upload_file", cancellationToken);
         var pow = _deepSeekPow.SolveChallenge(powChallenge);
@@ -150,39 +187,6 @@ public class DeepSeekClient : HttpApiClient
         var id = json.RootElement.GetByPathOrThrow("data.biz_data.id").GetString()!;
 
         return id;
-    }
-
-    #region Отправка сообщения
-
-    public async Task<bool> StopGeneration(
-        ChatSession chatSession,
-        long messageId,
-        CancellationToken cancellationToken = default)
-    {
-        var body = new
-        {
-            chat_session_id = chatSession.Id,
-            message_id = messageId
-        };
-
-        var response = await PostAsync(
-            "/chat/stop_stream",
-            body,
-            cancellationToken: cancellationToken);
-
-        try
-        {
-            var json = JsonDocument.Parse(response);
-            var value = json.RootElement.GetByPathOrThrow("code").GetInt64();
-
-            return value == 0;
-        }
-        catch (Exception exception) when (
-            exception is JsonException ||
-            exception is InvalidOperationException)
-        {
-            return false;
-        }
     }
 
     public async Task<string> SendMessageAsync(
