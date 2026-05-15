@@ -1,3 +1,7 @@
+## 1.5.0
+- Added a method to stop generation  
+- Added a method to delete a chat session  
+
 ## 1.4.1
 - Fixed an issue where initializing DeepSeekAPI with certain tokens caused errors  
 - Fixed a critical bug that could prevent messages from being sent 

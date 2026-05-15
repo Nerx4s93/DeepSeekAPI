@@ -2,7 +2,7 @@
 
 # Документация
 
-Проект DeepSeekAPI построен на базе [APIEngine](https://github.com/Nerx4s93/APIEngine).
+Проект DeepSeekAPI построен на базе APIEngine.
 
 Базовая реализация HTTP-запросов полностью вынесена в APIEngine, включая:
 - отправку запросов
@@ -37,22 +37,7 @@ public record UserProfile(
 
 ---
 
-### GetChatSessionsAsync
-Получает список чат-сессий пользователя.
-``` C#
-public async Task<List<ChatSession>> GetChatSessionsAsync(
-    double? updateAt = null,
-    CancellationToken cancellationToken = default)
-```
-
-Параметры:
-- `updateAt` — фильтр по времени обновления
-- `cancellationToken` — токен отмены
-
-Возвращает:
-- `List<ChatSession>`
-
----
+## Chat sessions API
 
 ### CreateChatSessionAsync
 Создаёт новую чат-сессию.
@@ -77,6 +62,62 @@ class ChatSettings
 
 ---
 
+### DeleteChatSessionAsync
+Уделние чат-сессии.
+``` C#
+public async Task<List<ChatSession>> DeleteChatSessionAsync(
+    ChatSession chatSession,
+    CancellationToken cancellationToken = default)
+```
+
+Параметры:
+- `chatSession` — чат
+- `cancellationToken` — токен отмены
+
+Возвращает:
+- `bool` — успех выполения запроса
+
+---
+
+### GetChatSessionsAsync
+Получает список чат-сессий пользователя.
+``` C#
+public async Task<List<ChatSession>> GetChatSessionsAsync(
+    double? updateAt = null,
+    CancellationToken cancellationToken = default)
+```
+
+Параметры:
+- `updateAt` — фильтр по времени обновления
+- `cancellationToken` — токен отмены
+
+Возвращает:
+- `List<ChatSession>`
+
+---
+
+
+## Messaging API
+
+### StopGenerationAsync
+
+``` C#
+public async Task<bool> StopGenerationAsync(
+    ChatSession chatSession,
+    long messageId,
+    CancellationToken cancellationToken = default)
+```
+
+Параметры:
+- `chatSession` — чат
+- `parentMessageId` — айди сообщения
+- `cancellationToken` — токен отмены
+
+Возвращает:
+- `bool` — успех выполения запроса
+
+---
+
 ### UploadFileAsync
 Загружает файл в DeepSeek.
 ``` C#
@@ -93,8 +134,6 @@ public async Task<string> UploadFileAsync(
 - `string` - `file_id`
 
 ---
-
-## Messaging API
 
 ### SendMessageAsync
 Отправляет сообщение и возвращает **полный ответ как строку**. Встроенный парсер не возвращает мысли и результаты поиска.

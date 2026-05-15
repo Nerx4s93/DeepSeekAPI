@@ -7,7 +7,7 @@
 		<Nullable>enable</Nullable>
 
 		<PackageId>DeepSeekAPI</PackageId>
-		<Version>1.4.1</Version>
+		<Version>1.5.0</Version>
 		<Authors>Nerx4s93</Authors>
 		<Description>.NET client for DeepSeek Chat API</Description>
 		<PackageTags>deepseek;api;chat;pow;wasm;ai;free;LLM</PackageTags>

@@ -144,7 +144,7 @@ public class DeepSeekClient : HttpApiClient
 
     #region Отправка сообщения
 
-    public async Task<bool> StopGeneration(
+    public async Task<bool> StopGenerationAsync(
         ChatSession chatSession,
         long messageId,
         CancellationToken cancellationToken = default)
@@ -179,7 +179,7 @@ public class DeepSeekClient : HttpApiClient
     string filePath,
     CancellationToken cancellationToken = default)
     {
-        var powChallenge = await GetPowChallenge("/api/v0/file/upload_file", cancellationToken);
+        var powChallenge = await GetPowChallengeAsync("/api/v0/file/upload_file", cancellationToken);
         var pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         using var request = CreateRequest(HttpMethod.Post, "file/upload_file");
@@ -363,7 +363,7 @@ public class DeepSeekClient : HttpApiClient
     {
         refFileIds ??= [];
 
-        var powChallenge = await GetPowChallenge("/api/v0/chat/completion", cancellationToken);
+        var powChallenge = await GetPowChallengeAsync("/api/v0/chat/completion", cancellationToken);
         var pow = _deepSeekPow.SolveChallenge(powChallenge);
 
         var body = new
@@ -459,7 +459,7 @@ public class DeepSeekClient : HttpApiClient
 
     #endregion
 
-    private async Task<PowRequest> GetPowChallenge(
+    private async Task<PowRequest> GetPowChallengeAsync(
         string targetpath,
         CancellationToken cancellationToken = default)
     {

@@ -37,22 +37,7 @@ public record UserProfile(
 
 ---
 
-### GetChatSessionsAsync
-Retrieves the user's list of chat sessions.
-``` C#
-public async Task<List<ChatSession>> GetChatSessionsAsync(
-    double? updateAt = null,
-    CancellationToken cancellationToken = default)
-```
-
-Parameters:
-- `updateAt` — filter by update time
-- `cancellationToken` — cancellation token
-
-Returns:
-- `List<ChatSession>`
-
----
+## Chat sessions API
 
 ### CreateChatSessionAsync
 Creates a new chat session.
@@ -77,6 +62,61 @@ class ChatSettings
 
 ---
 
+### DeleteChatSessionAsync
+Udelnie chat session.
+``` C#
+public async Task<List<ChatSession>> DeleteChatSessionAsync(
+    ChatSession chatSession,
+    CancellationToken cancellationToken = default)
+```
+
+Parameters:
+- `chatSession` — chat session
+- `cancellationToken` — cancellation token
+
+Returns:
+- `bool` — success of request execution
+
+---
+
+### GetChatSessionsAsync
+Retrieves the user's list of chat sessions.
+``` C#
+public async Task<List<ChatSession>> GetChatSessionsAsync(
+    double? updateAt = null,
+    CancellationToken cancellationToken = default)
+```
+
+Parameters:
+- `updateAt` — filter by update time
+- `cancellationToken` — cancellation token
+
+Returns:
+- `List<ChatSession>`
+
+---
+
+## Messaging API
+
+### StopGenerationAsync
+
+``` C#
+public async Task<bool> StopGenerationAsync(
+    ChatSession chatSession,
+    long messageId,
+    CancellationToken cancellationToken = default)
+```
+
+Parameters:
+- `chatSession` — chat session
+- `parentMessageId` — message id
+- `cancellationToken` — cancellation token
+
+Returns:
+- `bool` — success of request execution
+
+---
+
 ### UploadFileAsync
 Uploads a file to DeepSeek.
 ``` C#
@@ -93,8 +133,6 @@ Returns:
 - `string` - `file_id`
 
 ---
-
-## Messaging API
 
 ### SendMessageAsync
 Sends a message and returns the **full response as a string**. The built-in parser does not return thoughts or search results.
