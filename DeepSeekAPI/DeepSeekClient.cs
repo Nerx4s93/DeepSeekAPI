@@ -166,7 +166,7 @@ public class DeepSeekClient : HttpApiClient
         };
 
         var response = await PostAsync(
-            "/chat/stop_strea",
+            "/chat/stop_stream",
             body,
             cancellationToken: cancellationToken);
 
@@ -336,6 +336,7 @@ public class DeepSeekClient : HttpApiClient
             "/chat/completion",
             body,
             request => request.Headers.Add("x-ds-pow-response", pow),
+            HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
 
         using var stream = await result.Content.ReadAsStreamAsync(cancellationToken);
