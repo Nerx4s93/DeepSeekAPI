@@ -176,8 +176,8 @@ public class DeepSeekClient : HttpApiClient
     }
 
     public async Task<string> UploadFileAsync(
-    string filePath,
-    CancellationToken cancellationToken = default)
+        string filePath,
+        CancellationToken cancellationToken = default)
     {
         var powChallenge = await GetPowChallengeAsync("/api/v0/file/upload_file", cancellationToken);
         var pow = _deepSeekPow.SolveChallenge(powChallenge);
@@ -218,7 +218,7 @@ public class DeepSeekClient : HttpApiClient
         return id;
     }
 
-    public async Task<string> SendMessageAsync(
+    public async Task<MessageResponse> SendMessageAsync(
         ChatSession chatSession,
         string prompt,
         ChatSettings chatSettings,
@@ -226,7 +226,8 @@ public class DeepSeekClient : HttpApiClient
         List<string>? refFileIds = null,
         CancellationToken cancellationToken = default)
     {
-        var response = new StringBuilder();
+        var messageId = 0L;
+        var answer = new StringBuilder();
 
         await foreach (var token in SendMessageStream(
             chatSession,
@@ -236,10 +237,11 @@ public class DeepSeekClient : HttpApiClient
             refFileIds,
             cancellationToken))
         {
-            response.Append(token.Text);
+            messageId = token.MessageId;
+            answer.Append(token.Text);
         }
 
-        return response.ToString();
+        return new MessageResponse(messageId, answer.ToString());
     }
 
     public async IAsyncEnumerable<StreamToken> SendMessageStream(
