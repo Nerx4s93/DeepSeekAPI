@@ -138,7 +138,7 @@ public async Task<string> UploadFileAsync(
 ### SendMessageAsync
 Отправляет сообщение и возвращает **полный ответ как строку**. Встроенный парсер не возвращает мысли и результаты поиска.
 ``` C#
-public async Task<string> SendMessageAsync(
+public async Task<MessageResponse> SendMessageAsync(
     ChatSession chatSession,
     string prompt,
     ChatSettings chatSettings,
@@ -156,7 +156,7 @@ public async Task<string> SendMessageAsync(
 - `cancellationToken` — токен отмены
 
 Возвращает:
-- `string` — полный ответ модели
+- `MessageResponse` — ответ модели и id сообщения
 
 ---
 

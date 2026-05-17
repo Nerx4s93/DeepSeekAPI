@@ -137,7 +137,7 @@ Returns:
 ### SendMessageAsync
 Sends a message and returns the **full response as a string**. The built-in parser does not return thoughts or search results.
 ``` C#
-public async Task<string> SendMessageAsync(
+public async Task<MessageResponse> SendMessageAsync(
     ChatSession chatSession,
     string prompt,
     ChatSettings chatSettings,
@@ -155,7 +155,7 @@ Parameters:
 - `cancellationToken` — cancellation token
 
 Returns:
-- `string` — the model's full response
+- `MessageResponse` — the model response and message id
 
 ---
 

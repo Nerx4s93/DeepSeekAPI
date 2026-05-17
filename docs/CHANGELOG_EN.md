@@ -1,3 +1,6 @@
+## 1.5.1
+- Changing the return type in the `SendMessageAsync` method: `string` -> `MessageResponse`
+
 ## 1.5.0
 - Added a method to stop generation  
 - Added a method to delete a chat session  
