@@ -31,6 +31,7 @@ public async Task<UserProfile> GetUserProfileAsync(CancellationToken cancellatio
 ``` C#
 public record UserProfile(
     string Id,
+	string Token,
     string Email,
     string MobileNumber);
 ```
