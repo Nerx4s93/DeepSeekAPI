@@ -48,10 +48,11 @@ public class DeepSeekClient : HttpApiClient
         using var json = JsonDocument.Parse(response);
 
         var id = json.RootElement.GetByPathOrThrow("data.biz_data.id").GetString()!;
+        var token = json.RootElement.GetByPathOrThrow("data.biz_data.token").GetString()!;
         var email = json.RootElement.GetByPathOrThrow("data.biz_data.email").GetString()!;
         var mobileNumber = json.RootElement.GetByPathOrThrow("data.biz_data.mobile_number").GetString()!;
 
-        return new UserProfile(id, email, mobileNumber);
+        return new UserProfile(id, token, email, mobileNumber);
     }
 
     #region Сессии
