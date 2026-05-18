@@ -210,7 +210,7 @@ public class DeepSeekClient : HttpApiClient
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new APIError(text, (int)response.StatusCode);
+            throw new APIException(text, (int)response.StatusCode);
         }
 
         using var json = JsonDocument.Parse(text);
@@ -454,7 +454,7 @@ public class DeepSeekClient : HttpApiClient
             throw reason switch
             {
                 "rate_limit_reached" => new RateLimitError(content ?? ""),
-                _ => new APIError($"{reason}: {content}", 0),
+                _ => new APIException($"{reason}: {content}", 0),
             };
         }
         catch (JsonException) { }
